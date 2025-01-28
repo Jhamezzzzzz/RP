@@ -14,7 +14,7 @@ import stockData from "./routes/StockData.js";
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5001;
 const host = process.env.DB_SERVER || "localhost";
 
 // Middleware
@@ -22,7 +22,7 @@ app.use(
   cors({
     // credentials: true,
     origin: [
-      "http://localhost:3000",
+      "http://localhost:3001",
     ],
   })
 );

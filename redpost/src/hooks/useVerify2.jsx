@@ -23,7 +23,9 @@ const useVerify = () => {
 
   const refreshToken = async () => {
     try {
+      console.log("tes")
       const response = await axiosInstance.get('/token')
+      console.log("ACCESSTOKEN :", response)
       setToken(response.data.accessToken)
       const decoded = jwtDecode(response.data.accessToken)
       setName(decoded.name)
@@ -39,7 +41,7 @@ const useVerify = () => {
         title: 'Oops...',
         text: 'Token Expired',
       })
-      navigate('/login')
+      navigate('/')
     }
   }
 
@@ -67,7 +69,7 @@ const useVerify = () => {
             title: 'Oops...',
             text: 'Token Expired',
           })
-          navigate('/input')
+          navigate('/')
         }
       } else {
         config.headers.Authorization = `Bearer ${token}`

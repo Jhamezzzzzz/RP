@@ -13,7 +13,7 @@ import InputRedPost from "./InputModel.js";
   try {
      //logMasterAssociations();
     //await db.sync();
-     //await db.sync({ force: true });
+    //  await db.sync({ force: true });
      //await StockData.sync({ force: true });
     // await db.sync({ alter: true });
     console.log("Database synced successfully.");

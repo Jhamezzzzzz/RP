@@ -41,9 +41,12 @@ export const getInputRedPostById = async (req, res) => {
 //Untuk  Input Date
 export const createInputRedPost = async (req, res) => {
   try {
+    console.log('req.body.InputDate', req.body.InputDate)
     const InputDate = await InputRedPost.findOne({
       where: { InputDate: req.body.InputDate, flag: 1 },
     });
+
+  
 
     if (InputDate) {
       return res.status(400).json({ message: "InputRedPost already exist" });
@@ -59,7 +62,7 @@ export const createInputRedPost = async (req, res) => {
 
 export const updateInputRedPost = async (req, res) => {
   try {
-    const inputRedPostId = req.params.id;
+    const inputRedPostId = req.params.id;x``
 
     const inputRedPost = await InputRedPost.findOne({
       where: { id: inputDateId, flag: 1 },

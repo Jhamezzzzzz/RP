@@ -25,7 +25,7 @@ const useStockDataService = () => {
 
   const uploadStockData = async (data) => {
     try {
-      const response = await axiosAutoToken.post(`upload-stockData/`, data)
+      const response = await axiosAutoToken.post(`upload-stockData`, data)
       return response
     } catch (error) {
       handleError(error, 'Error post StockData:')

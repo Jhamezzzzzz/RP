@@ -2,7 +2,7 @@ import axios from 'axios'
 import config from './Config.js'
 
 const axiosInstance = axios.create({
-  baseURL: `${config.TWIIS_URL}/api`,
+  baseURL: `${config.BACKEND_TWIIS_URL}/api`,
   withCredentials: true,
 })
 

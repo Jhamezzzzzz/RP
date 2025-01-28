@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
+import logo from '../assets/images/RedPostLogo.png';
 import {
   CContainer,
   CDropdown,
@@ -58,10 +59,10 @@ const AppHeader = () => {
         <CCol className='d-flex justify-content-between align-items-center" fluid'>
           {/* Gambar di pojok kiri */}
           <img
-            src="https://www.b-e-f.org/wp-content/uploads/2021/10/Toyota_Corp_Red-1.png" // Ganti dengan URL gambar And
-            style={{ height: '1rem', width: '5rem' }}
-          />
-
+           src={logo}
+           style={{ height: '2.2rem', width: '5rem' }}
+           alt="Logo Red Post"
+         />
           {/* Tanggal hari ini di pojok kanan */}
           <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
             {formattedDate}

@@ -10,7 +10,7 @@ const InputRedPost = db.define(
   "InputRedPost",
   {
     InputDate: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
     

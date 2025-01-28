@@ -2,6 +2,7 @@ import useVerify from '../hooks/useVerify'
 import useVerify2 from '../hooks/useVerify2'
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
+import axios from 'axios'
 
 const MySwal = withReactContent(Swal)
 
@@ -48,9 +49,9 @@ const useInputService = () => {
   const updateInput = async (id,data) => {
     try {
       const response = await axiosAutoToken.put(`/inputRedPost/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        // headers: {
+        //   Authorization: `Bearer ${token}`,
+        // },
       })
       return response
     } catch (error) {
@@ -62,9 +63,9 @@ const useInputService = () => {
   const deleteInputById = async (id) => {
     try {
       const response = await axiosAutoToken.get(`/inputRedPost-delete/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        // headers: {
+        //   Authorization: `Bearer ${token}`,
+        // },
       })
       return response.data // Returning the data instead of the whole response
     } catch (error) {
@@ -87,13 +88,29 @@ const useInputService = () => {
     }
   }
 
+  const getGic = async () => {
+    try {
+      const response = await axiosJWT.get(`/gic`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      return response
+    } catch (error) {
+      handleError(error, 'Error fetching inventory:')
+    }
+  }
+
   return {
     getInput,
     getInputById,
     postInput,
     updateInput,
     deleteInputById,
-    getMaterial
+    getMaterial,
+    getGic
   }
 }
 

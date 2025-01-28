@@ -55,7 +55,8 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
   const startIndex = (currentPage - 1) * itemsPerPage
-
+  const [dateRange, setDateRange] = useState([null, null]); // State untuk rentang tanggal
+  const [startDate, endDate] = dateRange; // Destructuring untuk tanggal awal dan akhir
   const doughnutData = {
     labels: ['White', 'Red'],
     datasets: [
@@ -408,17 +409,26 @@ const Dashboard = () => {
               </label>
               <Select className="basic-single" classNamePrefix="select" isClearable />
             </CCol>
-            <CCol sm={3}  className="d-none d-md-block">
-              <label htmlFor="plant" className="mb-1 form-label small">
-                Date
-              </label>
-              <CInputGroup >
-                <DatePicker ref={datePickerRef} dateFormat="yyyy-MM-dd" className="form-control" />
-                <CInputGroupText  style={{ width: '40px',}}onClick={handleIconClick}>
-                  <CIcon  icon={cilCalendar} />
-                </CInputGroupText>
-              </CInputGroup>
-            </CCol>
+            <CCol sm={3} className="d-none d-md-block">
+            <label htmlFor="dateRange" className="mb-1 form-label small">
+              Date Range
+            </label>
+            <CInputGroup>
+              <DatePicker
+                ref={datePickerRef}
+                selectsRange // Mengaktifkan pemilihan rentang tanggal
+                startDate={startDate} // Tanggal awal
+                endDate={endDate} // Tanggal akhir
+                onChange={(update) => setDateRange(update)} // Update state saat tanggal berubah
+                dateFormat="yyyy-MM-dd" // Format tanggal
+                className="form-control"
+                placeholderText="Select a date range" // Placeholder saat belum ada tanggal
+              />
+              <CInputGroupText style={{ width: '40px' }} onClick={handleIconClick}>
+                <CIcon icon={cilCalendar} />
+              </CInputGroupText>
+            </CInputGroup>
+          </CCol>
           </CRow>
           <hr />
           <CRow>

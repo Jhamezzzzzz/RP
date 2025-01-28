@@ -45,7 +45,7 @@ const DataStock = () => {
   const [loadingImport, setLoadingImport] = useState(false)
   const [modalUpload, setModalUpload] = useState(false)
   const [globalFilterValue, setGlobalFilterValue] = useState('')
-
+  const [filteredData, setFilteredData] = useState([]);
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   })
@@ -106,11 +106,13 @@ const DataStock = () => {
       const data = Array.isArray(response.data.data) ? response.data.data : []
       setTotalPages(response.data.totalPages)
       setCurrentPage(response.data.currentPage)
+      setFilteredData(data); // Awalnya data yang difilter adalah semua data
       setTotalItem(response.data.totalItems)
       setStockData(data)
     } catch (error) {
       console.error('Failed to fetch stock data:', error)
       setStockData([]) // Set an empty array on error
+      setFilteredData([]);
       setCurrentPage(0)
 
       setTotalItem(0)
@@ -122,28 +124,34 @@ const DataStock = () => {
   console.log('TotalItem', totalItem)
   console.log('Data', stockData)
 
+
+ 
+
   const handleUpload = async () => {
     if (!uploadData.file) {
       MySwal.fire('Error', 'Please select a file to upload.', 'error')
       return
     }
-
+  
     setLoadingImport(true)
+  
+    // Buat FormData kosong
     const formData = new FormData()
-    formData.append('file', uploadData.file)
-    formData.append('importDate', uploadData.importDate)
-
+    formData.append('file', uploadData.file) // Tambahkan file
+    formData.append('importDate', uploadData.importDate) // Tambahkan tanggal impor
+  
     try {
-      await uploadStockData(formData) // Ganti 'some-id' dengan id yang sesuai
+      await uploadStockData(formData) // Panggil API untuk upload data
       MySwal.fire('Success', 'File uploaded successfully.', 'success')
       setModalUpload(false)
-      fetchStockData()
+      fetchStockData() // Refresh data setelah upload berhasil
     } catch (error) {
       console.error('Failed to upload file:', error)
     } finally {
-      setLoadingImport(false)
+      setLoadingImport(false) // Hentikan animasi loading
     }
   }
+  
 
   const showModalUpload = () => {
     setModalUpload(true)
@@ -163,6 +171,19 @@ const DataStock = () => {
       file: file,
     }))
   }
+
+  const onGlobalFilterChange = (e) => {
+    const value = e.target.value.toLowerCase();
+    setGlobalFilterValue(value);
+
+    // Filter data berdasarkan input pencarian
+    const filtered = stockData.filter((item) =>
+      item.MaterialNo.toLowerCase().includes(value) ||
+      item.description.toLowerCase().includes(value)
+    );
+    setFilteredData(filtered);
+  };
+  
   const renderHeader = () => {
     return (
       <div>
@@ -176,16 +197,9 @@ const DataStock = () => {
           />
         </IconField>
       </div>
-    )
-  }
-  const onGlobalFilterChange = (e) => {
-    const value = e.target.value
-    setFilters({
-      ...filters,
-      global: { value },
-    })
-    setGlobalFilterValue(value)
-  }
+    );
+  };
+ 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber)
   }
@@ -222,6 +236,7 @@ const DataStock = () => {
                   <div className="d-flex flex-wrap justify-content-end">{renderHeader()}</div>
                 </CCol>
               </CRow>
+          
               <CTable
                 bordered
                 responsive
@@ -255,7 +270,7 @@ const DataStock = () => {
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {stockData.map((item, index) => (
+                  {filteredData.map((item, index) => (
                     <CTableRow key={index}>
                       <CTableDataCell>{item.MaterialNo}</CTableDataCell>
                       <CTableDataCell>{item.description}</CTableDataCell>
