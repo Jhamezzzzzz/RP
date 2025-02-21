@@ -22,10 +22,18 @@ const useStockDataService = () => {
       return null // Return null or a fallback value on error
     }
   }
-
+  const getSohData = async (materialNo) => {
+    try {
+      const response = await axiosAutoToken.get(`/sohData?materialNo=${materialNo}`)
+      return response // Return the response if successful
+    } catch (error) {
+      handleError(error, 'Error fetching StockData:') // Handle the error
+      return null // Return null or a fallback value on error
+    }
+  }
   const uploadStockData = async (data) => {
     try {
-      const response = await axiosAutoToken.post(`upload-stockData`, data)
+      const response = await axiosAutoToken.post(`uploadStockData`, data)
       return response
     } catch (error) {
       handleError(error, 'Error post StockData:')
@@ -35,6 +43,8 @@ const useStockDataService = () => {
   return {
     getStockData,
     uploadStockData,
+    getSohData
+    
   }
 }
 

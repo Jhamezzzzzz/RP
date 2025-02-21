@@ -1,4 +1,5 @@
 import InputRedPost from "../models/InputModel.js";
+import StockData from "../models/StockDataModel.js";
 
 //ini RedPost
 export const getInputRedPost = async (req, res) => {
@@ -41,31 +42,36 @@ export const getInputRedPostById = async (req, res) => {
 //Untuk  Input Date
 export const createInputRedPost = async (req, res) => {
   try {
-    console.log('req.body.InputDate', req.body.InputDate)
-    const InputDate = await InputRedPost.findOne({
-      where: { InputDate: req.body.InputDate, flag: 1 },
+    console.log('req.body.InputDate:', req.body.InputDate);
+
+    // Cek apakah StockData dengan ID yang diberikan ada di database
+    const stockData = await StockData.findOne({
+      where: { id: req.body.StockDataId },
     });
 
-  
-
-    if (InputDate) {
-      return res.status(400).json({ message: "InputRedPost already exist" });
+    if (!stockData) {
+      return res.status(404).json({ message: "StockData not found" });
     }
 
-    await InputRedPost.create(req.body);
-    res.status(201).json({ message: "InputRedPost Created" });
+    // Membuat data baru di tabel InputRedPost
+    const newPost = await InputRedPost.create(req.body);
+
+    // Mengembalikan respons dengan data yang baru dibuat
+    res.status(201).json(newPost);
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error creating InputRedPost:", error.message);
+    res.status(500).json({ message: error.message });
   }
 };
 
+
 export const updateInputRedPost = async (req, res) => {
   try {
-    const inputRedPostId = req.params.id;x``
+    const inputRedPostId = req.params.id; // Ambil ID dari parameter URL
 
+    // Gunakan inputRedPostId, bukan inputDateId
     const inputRedPost = await InputRedPost.findOne({
-      where: { id: inputDateId, flag: 1 },
+      where: { id: inputRedPostId, flag: 1 }, // Perbaikan di sini
     });
 
     if (!inputRedPost) {
@@ -74,16 +80,18 @@ export const updateInputRedPost = async (req, res) => {
 
     await InputRedPost.update(req.body, {
       where: {
-        id: inputRedPostId,
+        id: inputRedPostId, // Pastikan ini menggunakan inputRedPostId yang benar
         flag: 1,
       },
     });
-    res.status(200).json({ message: "inputRedPost Updated" });
+
+    res.status(200).json({ message: "InputRedPost Updated" });
   } catch (error) {
-    console.log(error.message);
+    console.error(error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export const deleteInputRedPost = async (req, res) => {
   try {

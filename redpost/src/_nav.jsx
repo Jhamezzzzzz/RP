@@ -23,7 +23,7 @@ const _nav = [
     items: [
       {
         component: CNavItem,
-        name: 'input',
+        name: 'Input',
         to: '/input',
       },
      

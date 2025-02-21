@@ -46,12 +46,12 @@ const useInputService = () => {
     }
   }
 
+  
+
   const updateInput = async (id,data) => {
     try {
       const response = await axiosAutoToken.put(`/inputRedPost/${id}`, data, {
-        // headers: {
-        //   Authorization: `Bearer ${token}`,
-        // },
+   
       })
       return response
     } catch (error) {
@@ -72,10 +72,10 @@ const useInputService = () => {
       handleError(error, `Error delete data for ID ${id}:`)
     }
   }
-  const getMaterial = async (plantId, storageId, type) => {
+  const getMaterial = async () => {
     try {
       const response = await axiosJWT.get(
-        `/inventory?plantId=${plantId}&storageId=${storageId}&type=${type}`,
+        `/inventory?plantId=1&storageId=&type=`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -102,7 +102,20 @@ const useInputService = () => {
       handleError(error, 'Error fetching inventory:')
     }
   }
-
+  const getWbs = async () => {
+    try {
+      const response = await axiosJWT.get(`/wbs`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      return response
+    } catch (error) {
+      handleError(error, 'Error fetching inventory:')
+    }
+  }
   return {
     getInput,
     getInputById,
@@ -110,7 +123,8 @@ const useInputService = () => {
     updateInput,
     deleteInputById,
     getMaterial,
-    getGic
+    getGic,
+    getWbs
   }
 }
 

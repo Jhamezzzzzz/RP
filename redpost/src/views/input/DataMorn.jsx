@@ -71,7 +71,7 @@ const DataStock = () => {
   const [visiblePages, setVisiblePages] = useState([])
 
   useEffect(() => {
-    const maxVisiblePages = 5 // Max number of pages to show
+    const maxVisiblePages = 6 // Max number of pages to show
     const halfVisible = Math.floor(maxVisiblePages / 2)
 
     let startPage = Math.max(1, currentPage - halfVisible)
@@ -178,7 +178,7 @@ const DataStock = () => {
 
     // Filter data berdasarkan input pencarian
     const filtered = stockData.filter((item) =>
-      item.MaterialNo.toLowerCase().includes(value) ||
+      item.materialNo.toLowerCase().includes(value) ||
       item.description.toLowerCase().includes(value)
     );
     setFilteredData(filtered);
@@ -220,14 +220,6 @@ const DataStock = () => {
                       severity="primary"
                       className="rounded-5 me-2 mb-2"
                       onClick={showModalUpload}
-                      data-pr-tooltip="XLS"
-                    />
-                    <Button
-                      type="button"
-                      label="Excel"
-                      icon="pi pi-file-excel"
-                      severity="success"
-                      className="rounded-5 me-2 mb-2"
                       data-pr-tooltip="XLS"
                     />
                   </div>
@@ -272,7 +264,7 @@ const DataStock = () => {
                 <CTableBody>
                   {filteredData.map((item, index) => (
                     <CTableRow key={index}>
-                      <CTableDataCell>{item.MaterialNo}</CTableDataCell>
+                      <CTableDataCell>{item.materialNo}</CTableDataCell>
                       <CTableDataCell>{item.description}</CTableDataCell>
                       <CTableDataCell>{item.addresRack}</CTableDataCell>
                       <CTableDataCell>{item.soh}</CTableDataCell>

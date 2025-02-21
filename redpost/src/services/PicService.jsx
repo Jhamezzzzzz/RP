@@ -15,10 +15,7 @@ const usePicService = () => {
 
   const getPic = async () => {
     try {
-      const response = await axiosAutoToken.get(`stockData/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axiosAutoToken.get(`/pic/`, {
       })
       return response
     } catch (error) {

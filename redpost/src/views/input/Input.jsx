@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react'
+import React, { useState, useEffect, useRef,useCallback, Suspense,useMemo } from 'react'
 import { FilterMatchMode } from 'primereact/api'
 import { IconField } from 'primereact/iconfield'
 import { InputIcon } from 'primereact/inputicon'
 import { InputText } from 'primereact/inputtext'
+
 import {
   CCard,
   CCardHeader,
@@ -19,6 +20,7 @@ import {
   CButton,
   CFormLabel,
   CForm,
+  CFormCheck,
   CTable,
   CInputGroup,
   CInputGroupText,
@@ -43,6 +45,11 @@ import 'primereact/resources/themes/nano/theme.css'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import useInputService from '../../services/InputDataService'
+import usePicService from '../../services/PicService'
+import useShiftService from '../../services/ShiftService'
+import useStockDataService from '../../services/StockDataService'
+import { AbortedDeferredError } from 'react-router-dom'
+import { format, parseISO } from 'date-fns'
 
 const MySwal = withReactContent(Swal)
 
@@ -57,13 +64,41 @@ const InputInventory = () => {
   const [globalFilterValue, setGlobalFilterValue] = useState('')
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
   const itemsPerPage = 10
-  const {getInput,getInputById,postInput,updateInput,deleteInputById,getMaterial } = useInputService()
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false)
   const [inventory, setInventory] = useState([])
   const [filteredInventory, setFilteredInventory] = useState([])
+  const [selectedMrp, setSelectedMrp] = useState([])
   const [selectedMaterialNo, setSelectedMaterialNo] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('') // Menyimpan input pengguna
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedDescription, setSelectedDescription] = useState(null)
+  const [selectedAddress, setSelectedAddress] = useState(null)
+  const [conversionUom, setConversionUom] = useState('')
+  const [baseUom, setBaseUom] = useState('')
+  const [isWbs, setIsWbs] = useState(true);
+  const [cardOptions, setCardOptions] = useState([]);
+  const [picOptions, setPicOptions] = useState([]);
+  const [shiftOptions, setShiftOptions] = useState([]);
+  const [selectedPic, setSelectedPic] = useState(null);
+  const [selectedShift, setSelectedShift] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [qtyRec, setQtyRec] = useState(null);
+  const [stockId, setStockId] = useState(null);
+  const {getInput,getInputById,postInput,updateInput,deleteInputById,getMaterial,getGic,getWbs } = useInputService()
+  const { getStockData, uploadStockData,getSohData } = useStockDataService()
+  const [stockData, setStockData] = useState([]);
+  const [sohData, setSohData] = useState();
+  const [selectedSoh, setSelectedSoh] = useState(null);
+  const [isEditable, setIsEditable] = useState(false); // To toggle edit mode
+  const {getPic } = usePicService()
+  const {getShift} = useShiftService()
+  const [loading, setLoading] = useState(false);
+  const [qtyReq, setQtyReq] = useState(null); // Track the value of the input field
+  const [qtyReqEdit, setQtyReqEdit] = useState(0); // Untuk update (handleEditClick)
+  
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  
 
     plant: {
       value: null,
@@ -80,7 +115,7 @@ const InputInventory = () => {
       matchMode: FilterMatchMode.EQUALS,
     },
   })
-  useEffect(() => {
+  
     const fetchData = async () => {
       try {
         const response = await getInput(); // Fetch data on mount
@@ -89,22 +124,154 @@ const InputInventory = () => {
         console.error('Failed to fetch data:', error);
       }
     };
+    useEffect(() => {
+      fetchData()
+    }, [])
 
-    fetchData();
-  }, [getInput]);
+
+    const getInventories = async () => {
+      try {
+        const response = await getMaterial();
+        console.log("response", response);
+  
+        // Urutkan data berdasarkan addressRackName
+        const sortedData = response.data.sort((a, b) => {
+          const rackA = a.Address_Rack?.addressRackName?.toLowerCase() || "";
+          const rackB = b.Address_Rack?.addressRackName?.toLowerCase() || "";
+          return rackA.localeCompare(rackB);
+        });
+  
+        setInventory(sortedData);
+      } catch (error) {
+        console.error("Error fetching inventories:", error);
+      }
+    };
+  
+    // Fungsi untuk mendapatkan data stok berdasarkan material yang dipilih
+
+    console.log("stockData",stockData);
+    
+    const fetchStockData = async () => {
+      setLoading(true);
+      try {
+        const response = await getStockData();
+        setStockData(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        console.error("Error fetching StockData:", error);
+        setStockData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    useEffect(() => {
+      getInventories();
+    }, []);
+
+    useEffect(() => {
+      if (selectedMaterialNo) {
+        fetchStockData(selectedMaterialNo);
+      } else {
+        setStockData([]); // Reset stockData jika tidak ada Material No yang dipilih
+      }
+    }, [selectedMaterialNo]);
+
+  const fetchCardData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = isWbs ? await getWbs() : await getGic(); // Call the appropriate API
+      const options = response.data.map((item) => ({
+        value: item.id,
+        label: isWbs ? item.wbsNumber: item.gicNumber // Use cardNo or a fallback
+      }));
+      setCardOptions(options); // Update options
+    } catch (error) {
+      console.error('Failed to fetch card data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  });
+
+  // Trigger fetchCardData when isWbs changes
+  useEffect(() => {
+    fetchCardData();
+  }, [isWbs]);
+
+console.log("picOptions",picOptions);
+
+console.log("Selected Pic Value:", selectedPic);
+
+
+  const fetchPicData = async () => {
+    try {
+      const data = await getPic();
+      
+      setPicOptions(data.data.map((item) => ({ value: item.id, label: item.PicName })));
+      
+    } catch (error) {
+      console.error("Error fetching PIC data:", error);
+    }
+  };
+console.log("shiftOptions",shiftOptions);
+
+  const fetchShiftData = async () => {
+    try {
+      const data = await getShift();
+
+      setShiftOptions(data.data.map((item) => ({ value: item.id, label: item.ShiftName })));
+    } catch (error) {
+      console.error("Error fetching Shift data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPicData();
+    fetchShiftData();
+  }, []);
+  
+
+  
+  const fetchSohData = async (materialNo) => {
+    setLoading(true);
+    try {
+      const response = await getSohData(materialNo);
+      console.log("cek soh:", response.data.soh);
+      setSohData(response.data.soh);
+      setStockId(response.data.id);
+    } catch (error) {
+      console.error("Error fetching StockData:", error);
+      setSohData();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAdd = async () => {
+      // Check if stockId is set before proceeding
+    if (!stockId) {
+      console.error("stockId is null or undefined");
+      return; // Exit early if stockId is not available
+    }
     // Menyiapkan data yang akan dikirim ke API
+    const timeZone = 'Asia/Jakarta';
+    // Get the current date in WIB (Asia/Jakarta)
+    const currentDateInWIB = new Date(); // Current local time
+    const today = format(currentDateInWIB, 'yyyy-MM-dd', { timeZone }); // Format the date to "yyyy-mm-dd"
+
     const data = {
-      date: InputDate, // Tanggal
-      pic: PicId, // PIC yang dipilih
-      shift: selectedShift, // Shift yang dipilih
-      materialNo: MaterialNo, // Material No yang dipilih
-      description: Description, // Description yang dipilih
-      cardNo: CardNo, // Card No yang dipilih
-      qtyRec: QtyReq, // Quantity yang dimasukkan
-      soh: soh, // SOH (Stock On Hand)
+      InputDate: today, // Tanggal
+      MaterialNo: selectedMaterialNo?.label, // PIC yang dipilih
+      Description: selectedDescription?.label, // Shift yang dipilih
+      Address: selectedAddress?.label, // Material No yang dipilih
+      Mrp: selectedMrp?.label,
+      CardNo: selectedCard?.label, // Description yang dipilih
+      QtyReq: qtyRec, // Card No yang dipilih
+      ShiftId: selectedShift?.value, // Quantity yang dimasukkan
+      PicId :selectedPic?.value,
+      StockDataId:stockId
     };
+    console.log("TESSS",data)
+    
   
     // Memulai loading saat proses request
     setIsLoading(true);
@@ -113,17 +280,20 @@ const InputInventory = () => {
       const response = await postInput(data); // Mengirim data ke API
       if (response) {
         // Menambahkan item baru ke state items
-        setItems((prevItems) => [...prevItems, response.data]); // Misalnya response.data adalah data yang berhasil disimpan
-  
+        setItems((prevItems) => [response.data, ...prevItems]); // ⬅️ Tambahkan item ke paling atas
+        setCurrentPage(1);
+        localStorage.setItem("currentPage", 1); // ⬅️ Simpan state ke localStorage
+        setQtyReq(0); // Reset qtyReq agar tidak digunakan untuk update
         // Reset form setelah submit berhasil
         setDate(new Date().toLocaleDateString('en-CA'));
         setSelectedPic(null);
         setSelectedShift(null);
         setSelectedMaterialNo(null);
+        setSelectedMrp(null);
         setSelectedDescription(null);
-        setSelectedCardNo(null);
+        setSelectedCard(null);
         setQtyRec(0);
-        setSoh(0);
+        setStockId(null);
       }
     } catch (error) {
       console.error("Error adding data: ", error);
@@ -132,24 +302,15 @@ const InputInventory = () => {
     }
   };
 
-  //materials untu MaterialNo
-  const getMaterials = async (plantIdParams, type) => {
-    try {
-      const response = await getMaterial(plantIdParams, '', type)
+  useEffect(() => {
+    setCurrentPage(1); // ⬅️ Reset ke halaman pertama saat refresh
+  }, []);
 
-      // Urutkan data berdasarkan addressRackName secara ascending
-      const sortedData = response.data.sort((a, b) => {
-        const rackA = a.Address_Rack?.addressRackName?.toLowerCase() || '' // Lowercase untuk konsistensi
-        const rackB = b.Address_Rack?.addressRackName?.toLowerCase() || ''
-        return rackA.localeCompare(rackB)
-      })
-      setFilteredInventory([]) // Kosongkan filteredInventory
-      setInventory(sortedData) // Simpan data yang sudah diurutkan
-      setCurrentPage(1) // Reset halaman ke 1
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  useEffect(() => {
+  console.log("Updated Items:", items);
+}, [items]); // Ini memastikan kita melihat perubahan pada items
+  //materials untu MaterialNo
+  
   const handleDelete = async (id) => {
     try {
       await deleteInputById(id); // Delete the entry by id
@@ -173,8 +334,15 @@ const InputInventory = () => {
     })
 
     setSortConfig({ key, direction })
-    setData(sortedData)
   }
+
+  //qty Change untuk add/input
+  const handleQtyChange = (e) => {
+    const value = e.target.value; // Extract the value from the event
+    setQtyRec(value); // Set the value as state
+  };
+  console.log("stockId",stockId);
+  console.log("QtyRec",qtyRec);
 
   //tombol Search
   const renderHeader = () => {
@@ -268,31 +436,119 @@ const InputInventory = () => {
   }
 
   const handleMaterialNoChange = (selectedMaterial) => {
+    console.log("Selected Material:", selectedMaterial);
     if (selectedMaterial) {
+
       // Temukan item dari inventory berdasarkan materialNo yang dipilih
       const selectedItem = inventory.find((item) => item.id === selectedMaterial.value)
+
 
       if (selectedItem) {
         // Set nilai description, address, dan uom berdasarkan item yang ditemukan
         setSelectedMaterialNo(selectedMaterial) // Atur material yang dipilih
         setSelectedDescription({ value: selectedItem.id, label: selectedItem.Material.description })
+        setSelectedMrp({ value: selectedItem.id, label: selectedItem.Material.mrpType })
         setSelectedAddress({
           value: selectedItem.id,
           label: selectedItem.Address_Rack.addressRackName,
         })
+        fetchSohData(selectedItem.Material.materialNo)
+        setBaseUom(selectedItem.Material.uom)
+      }
+    } else {
+      // Reset semua state jika tidak ada material yang dipilih
+      
+      setSelectedMaterialNo(null)
+      setSelectedDescription(null)
+      setSohData(null)
+      setSelectedMrp(null)
+      setSelectedAddress(null)
+    }
+  }
+
+  const handleDescriptionChange = (selectedDescription) => {
+    if (selectedDescription) {
+      // Temukan item dari inventory berdasarkan description yang dipilih
+      const selectedItem = inventory.find((item) => item.id === selectedDescription.value)
+
+      if (selectedItem) {
+        // Set nilai description, address, dan uom berdasarkan item yang ditemukan
+        setSelectedDescription(selectedDescription) // Atur material yang dipilih
+        setSelectedMaterialNo({ value: selectedItem.id, label: selectedItem.Material.materialNo })
+        setSelectedAddress({
+          value: selectedItem.id,
+          label: selectedItem.Address_Rack.addressRackName,
+        })
+        setSelectedMrp({ value: selectedItem.id, label: selectedItem.Material.mrpType })
         setConversionUom(selectedItem.Material.Packaging?.packaging)
         setConversionRate(selectedItem.Material.Packaging?.unitPackaging)
         setBaseUom(selectedItem.Material.uom)
-        quantityInputRef.current?.focus()
+
       }
     } else {
       // Reset semua state jika tidak ada material yang dipilih
       setSelectedMaterialNo(null)
       setSelectedDescription(null)
+      setSelectedMrp(null)
       setSelectedAddress(null)
     }
   }
+  const customStyles = {
+    container: (provided) => ({
+      ...provided,
+      width: "100%", // Pastikan Select tetap 100% lebarnya
+    }),
+    control: (provided, state) => ({
+      ...provided,
+      width: "100%", // Memastikan width tetap penuh
+      borderColor: "#b22e2e", // Border merah selalu merah
+      boxShadow: state.isFocused ? "0 0 0 1px #b22e2e" : "none", // Efek saat fokus
+      "&:hover": {
+        borderColor: "#b22e2e", // Border tetap merah saat hover
+      },
+    }),
+  };
+  console.log('cek wbs',isWbs);
+  
+  
 
+  // Enable the input field for editing
+  const handleEditClick = (itemId, qtyReqValue) => {
+    setIsEditable(itemId); // Set the item to be editable
+    setQtyReq(qtyReqValue); // Set the initial value for the input field
+  };
+
+  // Handle the Enter key press to confirm changes
+  const handleKeyPress = async (e, itemId) => {
+    if (e.key === 'Enter') {
+      setIsEditable(null); // Menonaktifkan mode edit
+  
+      try {
+        const updatedItem = { QtyReq: Number(qtyReqEdit) || 0 }; // Pastikan tidak null
+  
+        console.log("Updating item with ID:", itemId); // Debugging
+  
+        if (itemId) {
+          await updateInput(Number(itemId), updatedItem); // Pastikan itemId dikonversi ke angka
+        } else {
+          await postInput(updatedItem);
+        }
+      } catch (error) {
+        console.error('Error updating or adding data:', error);
+      }
+    }
+  };
+  
+  // Sort items to show newest first
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => new Date(b.InputDate) - new Date(a.InputDate));
+  }, [items]);
+  
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+  
 
   return (
     <CRow>
@@ -303,61 +559,129 @@ const InputInventory = () => {
             <CForm>
               <CCardBody>
                 <CRow className="mt-1">
-                  <CCol xs={12} sm={6} md={5} xl={4}>
-                    <CFormLabel htmlFor="materialNo" style={{ fontSize: '12px' }}>
-                      Material No
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                    <Select
-                      className="basic-single"
-                      classNamePrefix="select"
-                      isLoading={isLoading}
+                <CCol xs={12} sm={6} md={3} xl={3}>
+                  <CFormLabel htmlFor="materialNo" 
+                  style={{ 
+                    fontSize: '13px', }}>
+                    Material No
+                  </CFormLabel>
+                   <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                   <Select
+                     className="basic-single"
+                     classNamePrefix="select"
+                     isLoading={isLoading}
                       isClearable={isClearable}
                       options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                        (i) => ({
-                          value: i.id,
-                          label: i.Material.materialNo,
-                        }),
-                      )}
-                      id="materialNo"
-                      onChange={handleMaterialNoChange}
-                      value={selectedMaterialNo}
-                      styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
-                    />
-                   
-                  </CInputGroup>
-                  </CCol>
-
-                  <CCol xs={12} sm={6} md={6} xl={4}>
-                    <CFormLabel htmlFor="description" style={{ fontSize: '12px' }}>
+                       (i) => ({
+                         value: i.id,
+                         label: i.Material.materialNo,
+                       }),
+                     )}
+                     id="materialNo"
+                     onChange={handleMaterialNoChange}
+                     value={selectedMaterialNo}
+                     styles={customStyles}
+                   />
+                    </CInputGroup>
+                 </CCol>
+                  <CCol xs={12} sm={6} md={4} xl={4} >
+                    <CFormLabel htmlFor="description" style={{ fontSize: '13px' }}>
                       Description
                     </CFormLabel>
                     <Select
-                      className="basic-single"
-                      classNamePrefix="select"
-                      isLoading={isLoading}
-                      id="description"
-                      isDisabled={true}
-                    />
+                    className="basic-single"
+                    classNamePrefix="Select Material No"
+                    isLoading={isLoading}
+                    isClearable={isClearable}
+                    isDisabled={true}
+                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
+                      (i) => ({
+                        value: i.id,
+                        label: i.Material.description,
+                      }),
+                    )}
+                    id="description"
+                    onChange={handleDescriptionChange}
+                    value={selectedDescription}
+                  />
                   </CCol>
-                  <CCol xs={12} sm={6} md={6} xl={4}>
-                    <CFormLabel htmlFor="cardNo" style={{ fontSize: '12px' }}>
-                      Card No
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                      <Select
-                        className="basic-single"
-                        classNamePrefix="select"
-                        isClearable={isClearable}
-                        id="cardNo"
-                        styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
-                      />
-                    </CInputGroup>
-                  </CCol>
-                </CRow>
-                <CRow>
-                  <CCol xs={12} sm={6} md={3} xl={3} className="mt-3">
-                    <CFormLabel htmlFor="pic" style={{ fontSize: '12px' }}>
+                  <CCol xs={12} sm={6} md={3} xl={3} >
+                  <CFormLabel htmlFor="address" style={{ fontSize: '13px' }}>Address</CFormLabel>
+                  <Select
+                    className="basic-single"
+                    classNamePrefix="Select Material No"
+                    isLoading={isLoading}
+                    isClearable={isClearable}
+                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
+                      (i) => ({
+                        value: i.id,
+                        label: i.Address_Rack.addressRackName,
+                      }),
+                    )}
+                    id="address"
+                    onChange={setSelectedAddress}
+                    value={selectedAddress}
+                    isDisabled={true}
+                  />
+                </CCol>
+                <CCol xs={12} sm={6} md={2} xl={2} >
+                  <CFormLabel htmlFor="mrp" style={{ fontSize: '13px' }}>MRP</CFormLabel>
+                  <Select
+                    className="basic-single"
+                    classNamePrefix="Select Material No"
+                    isLoading={isLoading}
+                    isClearable={isClearable}
+                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
+                      (i) => ({
+                        value: i.id,
+                        label: i.Material.mrpType,
+                      }),
+                    )}
+                    id="mrp"
+                    onChange={setSelectedMrp}
+                    value={selectedMrp}
+                    isDisabled={true}
+                  />
+                </CCol>
+                  </CRow>
+                  <CRow>
+                  <CCol xs={12} sm={2} md={2} xl={2}  className="mt-1">
+                        <label style={{ fontSize: '13px' }}>Card No</label>
+                        <CFormCheck
+                          type="radio"
+                          id="payment1"
+                          label="WBS"
+                          checked={isWbs} // Properly bind to isWbs
+                          onChange={() => setIsWbs(true)} // Set state to WBS
+                        />
+                        <CFormCheck
+                          type="radio"
+                          id="payment2"
+                          label="GIC"
+                          checked={!isWbs} // Check if GIC is selected
+                          onChange={() => setIsWbs(false)} // Set state to GIC
+                        />
+                      </CCol>
+                      <CCol xs={12} sm={10} md={4} xl={3}  className="mt-1">
+                       <CFormLabel htmlFor="cardNo" style={{ fontSize: '13px' }}>
+                         ID Card
+                       </CFormLabel>
+                       <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                         <Select
+                           className="basic-single"
+                           classNamePrefix="select"
+                            isLoading={isLoading} // Show loading spinner
+                           options={cardOptions} // Options from API
+                           onChange={setSelectedCard}
+                           id="cardNo"
+                           placeholder="Select Card..."
+                           styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
+                           isDisabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
+                         />
+                       </CInputGroup>
+                     </CCol>
+                     <CCol xs={12} sm={6} md={3} xl={4}  className="mt-1">
+                    <CFormLabel htmlFor="pic" style={{ fontSize: '13px' }}>
                       PIC
                     </CFormLabel>
                     <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
@@ -366,13 +690,37 @@ const InputInventory = () => {
                         classNamePrefix="select"
                         isClearable={isClearable}
                         id="pic"
+                        options={picOptions}
+                        value={selectedPic}
+                        onChange={setSelectedPic}
                         styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
+                        isDisabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
                       />
                     </CInputGroup>
                   </CCol>
-                  <CCol xs={12} sm={6} md={3} xl={3} className="mt-3">
-                    <CFormLabel htmlFor="qty" style={{ fontSize: '12px' }}>
-                      Qty Recip
+                  <CCol xs={12} sm={6} md={3} xl={3}  className="mt-1">
+                    <CFormLabel htmlFor="shift" style={{ fontSize: '13px' }}>
+                      Shift
+                    </CFormLabel>
+                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                      <Select
+                        className="basic-single"
+                        classNamePrefix="select"
+                        isClearable={isClearable}
+                        id="shift"
+                        options={shiftOptions}
+                        value={selectedShift}
+                        onChange={setSelectedShift}
+                        styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
+                        isDisabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
+                      />
+                    </CInputGroup>
+                  </CCol>
+                  </CRow>  
+                <CRow>
+                  <CCol xs={12} sm={6} md={3} xl={3} className="mt-1">
+                    <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
+                    {`Quantity Over (${baseUom})`}
                     </CFormLabel>
                     <CFormInput
                       type="number"
@@ -381,43 +729,38 @@ const InputInventory = () => {
                       aria-describedby="quantity"
                       required
                       inputMode="numeric"
+                      value={qtyRec}
+                      onChange={handleQtyChange} // Attach the change handler
                       autoComplete="off"
+                      disabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
                     />
                   </CCol>
-
+                  <CCol xs={12} sm={5} md={3} xl={2} className="mt-1">
+                      <CFormLabel htmlFor="soh" style={{ fontSize: "13px" }}>
+                        {` SOH  (${baseUom})`}
+                      </CFormLabel>
+                      <CFormInput
+                      type="text"
+                      placeholder="SoH.."
+                      required
+                      inputMode="numeric"
+                      autoComplete="off"
+                      className="basic-single"
+                      classNamePrefix="Select Material No"
+                      isClearable
+                      id="soh"
+                      value={sohData}
+                      disabled={true} // DISABLED jika Material No belum dipili
+                    />
+                    </CCol>
                   <CCol
-                    xs={12}
-                    sm={6}
-                    md={3}
-                    xl={3}
-                    className="d-flex justify-content-start align-items-center mt-4"
+                    xs={12} sm={6} md={3} xl={3}
+                    className="d-flex justify-content-start align-items-center mt-1"
                   >
                    <CButton color="primary" onClick={handleAdd}>Add</CButton>
                   </CCol>
                 </CRow>
                 {/* Collapse content */}
-
-                <CRow className="mt-3">
-                  {/* Modal untuk QR Scanner */}
-                  <CModal
-                    visible={isQrScannerOpen}
-                    onClose={() => {
-                      setIsQrScannerOpen(false)
-                      setBoundingBoxes([])
-                    }}
-                  >
-                    <CModalHeader closeButton>Scan QR Code</CModalHeader>
-                    <CModalBody style={{ position: 'relative' }}>
-                      <Scanner
-                        constraints={{ video: { facingMode: 'environment' } }}
-                        style={{ width: '100%' }}
-                        allowMultiple={true} // mendukung banyak QR Code
-                        scanDelay={3000}
-                      />
-                      {/* Menampilkan teks hasil scan QR Code di posisi barcode */}
-                    </CModalBody>
-                  </CModal>
-                </CRow>
               </CCardBody>
             </CForm>
           </CCard>
@@ -471,9 +814,8 @@ const InputInventory = () => {
                     bordered
                     striped
                     responsive
-                    className="text-center"
                     style={{
-                      fontSize: '12px', // Mengurangi ukuran font
+                      fontSize: '14px', // Mengurangi ukuran font
                     }}
                   >
                     <CTableHead color="dark">
@@ -481,7 +823,6 @@ const InputInventory = () => {
                         <CTableHeaderCell
                           scope="col"
                           onClick={() => handleSort('date')}
-                          style={{ position: 'sticky', left: 0, zIndex: 1 }}
                         >
                           Date{' '}
                           {sortConfig.key === 'date' && (
@@ -492,14 +833,7 @@ const InputInventory = () => {
                         </CTableHeaderCell>
                         <CTableHeaderCell
                           scope="col"
-                          onClick={() => handleSort('date')}
-                          style={{
-                            position: 'sticky',
-                           
-                            zIndex: 1,
-                            background: '#343a40', // Warna background agar sticky terlihat
-                            width: '100px', // Lebar kolom Date
-                          }}
+                          onClick={() => handleSort('pic')}
                         >
                           PIC{' '}
                           {sortConfig.key === 'pic' && (
@@ -516,7 +850,7 @@ const InputInventory = () => {
                             />
                           )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell scope="col" onClick={() => handleSort('materialNo')}>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('materialNo')} >
                           Material No{' '}
                           {sortConfig.key === 'materialNo' && (
                             <CIcon
@@ -524,7 +858,7 @@ const InputInventory = () => {
                             />
                           )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell scope="col" onClick={() => handleSort('description')}>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('description')} >
                           Description{' '}
                           {sortConfig.key === 'description' && (
                             <CIcon
@@ -544,9 +878,6 @@ const InputInventory = () => {
                         <CTableHeaderCell scope="col" onClick={() => handleSort('qtyROP')}>
                           Card No
                         </CTableHeaderCell>
-                        <CTableHeaderCell scope="col" onClick={() => handleSort('qtyROP')}>
-                          Qty ROP
-                        </CTableHeaderCell>
                         <CTableHeaderCell scope="col" onClick={() => handleSort('qtyRec')}>
                           Qty Rec{' '}
                           {sortConfig.key === 'qtyRec' && (
@@ -555,7 +886,7 @@ const InputInventory = () => {
                             />
                           )}
                         </CTableHeaderCell>
-                        <CTableHeaderCell scope="col" onClick={() => handleSort('soh')}>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('soh')}   style={{ color: 'red' }} >
                           SOH{' '}
                           {sortConfig.key === 'soh' && (
                             <CIcon
@@ -572,37 +903,69 @@ const InputInventory = () => {
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
-                      {items.map((item) => (
+                      {currentItems.map((item) => (
                         <CTableRow key={item.id}>
+                          <CTableDataCell className="align-middle"> {item.InputDate}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{picOptions.find(pic => pic.value === item.PicId)?.label || ""}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{shiftOptions.find(shift => shift.value === item.ShiftId)?.label || ""}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.MaterialNo}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.Description}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.Address}</CTableDataCell>
+                          <CTableDataCell 
+                          className={`align-middle ${item.Mrp === 'NQC' ? 'bg-danger text-white' : ''}`}>{
+                            item.Mrp}
+                          </CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.CardNo}</CTableDataCell>
+                          <CTableDataCell>
+                            <div className="d-flex align-items-center">
+                              {/* Conditionally render either the input or the label */}
+                              {isEditable === item.id ? (
+                                <CFormInput
+                                  type="number"
+                                  value={qtyReq}
+                                  onChange={(e) => handleQtyChange(e, item.id)} // Pass itemId here
+                                  onKeyDown={(e) => handleKeyPress(e, item.id)} // Listen for Enter key press
+                                  className="form-control-sm text-center align-middle"
+                                  style={{ width: "65px" }}
+                                  autoFocus // Automatically focus on the input field
+                                />
+                              ) : (
+                                <div 
+                                  className="d-flex align-items-center" 
+                                  style={{
+                                    padding: "5px 10px", 
+                                    border: "1px solid #ccc", 
+                                    borderRadius: "4px", 
+                                    backgroundColor: "#fff", 
+                                    minWidth: "65px", 
+                                    textAlign: "center"
+                                  }}
+                                >
+                                  <span>{item.QtyReq}</span> {/* Display current value if not in edit mode */}
+                                </div>
+                              )}
+
+                                    <CIcon
+                                      className="ms-2"
+                                      icon={cilPencil}
+                                      size="sm"
+                                      style={{ fontSize: "10px", cursor: "pointer", color: "black" }}
+                                      onClick={() => handleEditClick(item.id, item.QtyReq)} // Trigger edit mode for specific item
+                                    />
+                                  </div>
+                          </CTableDataCell>
+                          <CTableDataCell className="align-middle">
+                              {console.log("Item StockDataId: ", item.StockDataId)}
+                              {console.log("SOH StockDataId: ", item.sohData)}
+                              {sohData && sohData.StockDataId === item.StockDataId
+                                ? item.sohData
+                                : "Loading..."}
+                            </CTableDataCell>
+
                           <CTableDataCell
-                            style={{
-                              position: 'sticky',
-                              left: 0,
-                              background: '#fff', // Warna background untuk data
-                              width: '100px', // Lebar kolom Date
-                            }}
+                            style={{ position: 'sticky', right: 0 }}
+                             className="text-center align-middle"
                           >
-                            {item.date}
-                          </CTableDataCell>
-                          <CTableDataCell style={{ position: 'sticky', left: 70 }}>
-                            {item.pic}
-                          </CTableDataCell>
-                          <CTableDataCell>{item.shift}</CTableDataCell>
-                          <CTableDataCell>{item.materialNo}</CTableDataCell>
-                          <CTableDataCell>{item.description}</CTableDataCell>
-                          <CTableDataCell>{item.address}</CTableDataCell>
-                          <CTableDataCell>{item.mrpType}</CTableDataCell>
-                          <CTableDataCell>{item.cardNo}</CTableDataCell>
-                          <CTableDataCell>{item.qtyROP}</CTableDataCell>
-                          <CTableDataCell>{item.qtyRec}</CTableDataCell>
-                          <CTableDataCell>{item.soh}</CTableDataCell>
-                          <CTableDataCell style={{ position: 'sticky', right: 0 }}>
-                            <CIcon
-                              className="me-3"
-                              icon={cilPencil}
-                              size="md"
-                              style={{ fontSize: '20px', cursor: 'pointer', color: 'black' }}
-                            />
                             <CIcon
                               icon={cilTrash}
                               size="md"
@@ -614,6 +977,11 @@ const InputInventory = () => {
                       ))}
                     </CTableBody>
                   </CTable>
+                  <div className="d-flex justify-content-between align-items-center mt-3">
+        <CButton disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>Previous</CButton>
+        <span>Page {currentPage} of {totalPages}</span>
+        <CButton disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>Next</CButton>
+      </div>
                 </div>
 
                 <div className="d-flex justify-content-center">

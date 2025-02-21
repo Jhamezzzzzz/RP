@@ -12,7 +12,7 @@ export const getStockData = async (req, res) => {
   try {
     // Dapatkan parameter page dari query, jika tidak ada default 1
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = 15; // Default 15 data per halaman
+    const limit = 1000; // Default 15 data per halaman
     const offset = (page - 1) * limit; // Hitung offset
 
     // Ambil data dengan pagination
@@ -36,7 +36,34 @@ export const getStockData = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-  
+ 
+//SOH by MaterialNo
+export const getSohByMaterialNo = async (req, res) => {
+  try {
+    const { materialNo } = req.query; // Ambil parameter MaterialNo dari query
+
+    // Validasi jika materialNo tidak diberikan
+    if (!materialNo) {
+      return res.status(400).json({ message: "MaterialNo is required" });
+    }
+
+    // Query untuk mendapatkan total soh berdasarkan MaterialNo
+    const stockData = await StockData.findOne({
+      attributes: ["id","materialNo", "soh"],
+      where: { materialNo: materialNo, flag: 1 }, // Hanya data dengan flag aktif
+    });
+
+    // Jika tidak ditemukan
+    if (!stockData) {
+      return res.status(404).json({ message: "MaterialNo not found" });
+    }
+
+    res.status(200).json(stockData);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 const validateHeader = (header) => {
@@ -93,7 +120,7 @@ export const uploadStockData = async (req, res) => {
       stockData.push({
         plant: row[1],
         SlocCd: row[2],
-        MaterialNo: row[3],
+        materialNo: row[3],
         description: row[4],
         addresRack: row[5],
         soh: row[6],

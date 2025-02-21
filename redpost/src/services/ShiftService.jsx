@@ -15,10 +15,7 @@ const useShiftService = () => {
 
   const getShift = async () => {
     try {
-      const response = await axiosAutoToken.get(`stockData/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axiosAutoToken.get(`shift/`, {
       })
       return response
     } catch (error) {
@@ -88,4 +85,4 @@ const useShiftService = () => {
   }
 }
 
-export default usePicService
+export default useShiftService

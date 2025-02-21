@@ -14,8 +14,8 @@ import InputRedPost from "./InputModel.js";
      //logMasterAssociations();
     //await db.sync();
     //  await db.sync({ force: true });
-     //await StockData.sync({ force: true });
-    // await db.sync({ alter: true });
+    //  await StockData.sync({ force: true });
+    // await StockData.sync({ alter: true });
     console.log("Database synced successfully.");
   } catch (error) {
     console.error("Unable to sync the database:", error);

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useState, useEffect, useRef,useCallback, Suspense,useMemo } from 'react'
 import {
   Chart as ChartJS,
   ArcElement,
@@ -10,6 +10,7 @@ import {
   LinearScale,
   BarElement,
 } from 'chart.js' // Import CategoryScale and BarElement
+import { format } from "date-fns";
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import ChartDataLabels from 'chartjs-plugin-datalabels'
@@ -36,7 +37,8 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilCalendar } from '@coreui/icons'
-
+import useInputService from '../../services/InputDataService'
+import useDashboardService from '../../services/DashboardService'
 // Daftarkan elemen Chart.js yang diperlukan
 ChartJS.register(
   ArcElement,
@@ -50,88 +52,171 @@ ChartJS.register(
   ChartDataLabels,
 ) // Register CategoryScale and BarElement
 
+
+
 const Dashboard = () => {
   const datePickerRef = useRef(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const itemsPerPage = 10
   const startIndex = (currentPage - 1) * itemsPerPage
-  const [dateRange, setDateRange] = useState([null, null]); // State untuk rentang tanggal
-  const [startDate, endDate] = dateRange; // Destructuring untuk tanggal awal dan akhir
-  const doughnutData = {
-    labels: ['White', 'Red'],
-    datasets: [
-      {
-        label: 'Colors',
-        data: [11, 13], // Data
-        backgroundColor: ['#C4E4FF', '#C63C51'], // Warna putih dan merah
-        borderColor: ['#DDDDDD', '#CC0000'], // Warna border
-        borderWidth: 1, // Ketebalan border
-      },
-    ],
+  const [mrpOptions, setMrpOptions] = useState([]);
+  const [selectedMrp, setSelectedMrp] = useState(null);
+  const [combGraphData, setCombGraphData] = useState(null);
+  const {getInput} = useInputService()
+  const { getCardData,getCombGraph,getLineGraph,getDoughnutGraph,getShiftGraph,} = useDashboardService()
+  const [tableData, setTableData] = useState([]); // 🔹 State untuk tabel
+  const [filteredData, setFilteredData] = useState([]); // 🔹 Data setelah filter
+  const [items, setItems] = useState([]) // State untuk menyimpan item yang ditambahkan
+  const [combGraph, setCombGraph] = useState();
+  const [lineGraph, setLineGraph] = useState({
+    labels: [],
+    datasets: [],
+  });
+  const [shiftGraph, setShiftGraph] = useState({
+    labels: [],
+    datasets: [],
+  });
+  const [dateRange, setDateRange] = useState([null, null]); // Simpan tanggal
+  const [cardData, setCardData] = useState(null);
+  const [doughnutGraph, setDoughnutGraph] = useState({
+    labels: [],
+    datasets: [],
+  });
+  
+  const fetchData = async () => {
+    try {
+      const response = await getInput();
+      if (!response || !Array.isArray(response.data)) { // ✅ Cek response.data
+        console.error("Invalid API response:", response);
+        return;
+      }
+  
+      setTableData(response.data); // ✅ Gunakan response.data sebagai array
+      setFilteredData(response.data); // ✅ Set default data ke tabel
+  
+      // 🔹 Ambil daftar unik MRP
+      const uniqueMrp = [...new Set(response.data.map((item) => item.Mrp))];
+  
+      // 🔹 Format agar cocok dengan react-select
+      const formattedOptions = [{ value: "", label: "All" }, ...uniqueMrp.map((mrp) => ({
+        value: mrp,
+        label: mrp,
+      }))];
+  
+      setMrpOptions(formattedOptions);
+    setSelectedMrp({ value: "", label: "All" }); // ✅ Set default ke "All"
+  } catch (error) {
+    console.error("Error fetching data:", error);
   }
+};
+  
 
-  const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: false, // Grafik mengikuti ukuran container
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          boxWidth: 15,
-        },
-      },
-      datalabels: {
-        display: true,
-        color: 'black',
-        font: {
-          size: 14,
-          weight: 'bold',
-        },
-        formatter: (value) => value,
-        anchor: 'center',
-        align: 'center',
-        backgroundColor: 'white',
-        borderRadius: 4,
-        padding: 6,
-      },
-    },
-    cutout: '50%', // Ukuran lubang tengah
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 🔹 Filter data berdasarkan MRP setiap kali pilihan berubah
+  useEffect(() => {
+    if (!selectedMrp) {
+      setFilteredData(tableData); // Jika tidak ada filter, tampilkan semua data
+    } else {
+      const filtered = tableData.filter((item) =>
+        selectedMrp?.value ? item.Mrp === selectedMrp.value : true
+      );
+      setFilteredData(filtered);
+    }
+  }, [selectedMrp, tableData]);
+
+  const currentPageData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const handleIconClick = () => {
+    if (datePickerRef.current) {
+      datePickerRef.current.setFocus();
+    }
+  };
+  console.log("Updated Card Data:", cardData); // 🔍 Debug setelah set state
+  const fetchCardData = async () => {
+    try {
+      const [startDate, endDate] = dateRange; // ✅ Ambil start & end dari array
+      if (!startDate || !endDate) return; // Cegah API call jika tanggal tidak lengkap
+      
+      const data = await getCardData(startDate, endDate);
+      if (!data) {
+        console.error("Invalid API response:", data);
+        return;
+      }
+      console.log("Fetched Card Data:", data);
+      setCardData(data);
+    } catch (error) {
+      console.error("Error fetching card data:", error);
+    }
+};
+useEffect(() => {
+  if (dateRange[0] && dateRange[1]) {
+    const startDate = format(dateRange[0], "yyyy-MM-dd");
+    const endDate = format(dateRange[1], "yyyy-MM-dd");
+    fetchCardData(startDate, endDate);
   }
+}, [dateRange]);
 
-  const lineChartData = {
-    labels: ['01-20', '01-21', '01-22', '01-23', '01-24', '01-25', '01-26'], // Labels for X axis (Material No)
-    datasets: [
-      {
-        type: 'line',
-        label: 'Frequency Material Red Post', // Dataset label
-        data: [14, 15, 28, 30, 21, 44, 8], // Data for each label
-        borderColor: 'rgba(75, 192, 192, 1)', // Line color
-        backgroundColor: 'rgba(75, 192, 192, 0.2)', // This will make the area below the line filled (optional)
-        borderWidth: 2, // Line thickness
-        fill: false, // Set to false for no area fill under the line
-        pointRadius: 5, // Point size on the line chart
-        pointHoverRadius: 7, // Hover effect radius
-      },
-    ],
+
+
+  //untuk card data 
+
+  const fetchCombGraph = async () => {
+    try {
+      const [startDate, endDate] = dateRange;
+      if (!startDate || !endDate) return; // Cegah API call jika tanggal tidak lengkap
+  
+      const response = await getCombGraph(startDate, endDate);
+      if (!response || !response.data) {
+        console.error("Invalid API response:", response);
+        return;
+      }
+  
+      const { inputRedPostCounts } = response.data;
+  
+      // **Transform Data**
+      const labels = inputRedPostCounts.map((item) => item.MaterialNo);
+      const barData = inputRedPostCounts.map((item) => item.redPostCount);
+  
+      // **Update State dengan Data Chart.js**
+      setCombGraphData({
+        labels,
+        datasets: [
+          {
+            type: "bar",
+            label: "Red Post Count",
+            data: barData,
+            backgroundColor: "#C63C51",
+            borderColor: "#C63C51",
+            borderWidth: 1,
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Error fetching combination graph data:", error);
+    }
   };
   
-  const lineChartOptions = {
+  useEffect(() => {
+    if (dateRange[0] && dateRange[1]) {
+      const startDate = format(dateRange[0], "yyyy-MM-dd");
+      const endDate = format(dateRange[1], "yyyy-MM-dd");
+      fetchCombGraph(startDate, endDate);
+    }
+  }, [dateRange]);
+  
+  const combinedOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: "top",
       },
       tooltip: {
         enabled: true,
-      },
-      datalabels: {
-        color: '#000', // Text color for labels
-        align: 'top', // Position labels at the top of the points
-        anchor: 'center',
-        font: {
-          size: 12,
-          weight: 'bold',
-        },
       },
     },
     scales: {
@@ -139,53 +224,285 @@ const Dashboard = () => {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Material No', // X-axis title (Material No)
+          text: "Material No",
           font: {
             size: 10,
           },
         },
       },
       y: {
+        beginAtZero: true,
         title: {
           display: true,
-          text: 'Frequency', // Y-axis title (Frequency)
+          text: "Red Post Count",
           font: {
             size: 10,
           },
         },
       },
     },
-    elements: {
-      line: {
-        tension: 0.4, // Smooth line curve
-      },
-      point: {
-        radius: 5, // Point size on the line chart
-        hoverRadius: 7, // Hover effect radius
+  };
+
+
+
+const fetchLineGraph = async () => {
+  try {
+    const [startDate, endDate] = dateRange;
+    if (!startDate || !endDate) return; // Cegah API call jika tanggal tidak lengkap
+
+    const formattedStartDate = format(new Date(startDate), "yyyy-MM-dd");
+    const formattedEndDate = format(new Date(endDate), "yyyy-MM-dd");
+
+    const response = await getLineGraph(formattedStartDate, formattedEndDate);
+    if (!response || !response.data) {
+      console.error("Invalid API response:", response);
+      return;
+    }
+
+    const { data } = response; // Sesuai dengan struktur response
+
+    // **Transform Data**
+    const labels = data.map((item) => item.date);
+    const lineData = data.map((item) => item.materialCount);
+
+    // **Update State dengan Data Chart.js**
+    setLineGraph({
+      labels,
+      datasets: [
+        {
+          type: "line",
+          label: "Frequency Material Red Post",
+          data: lineData,
+          borderColor: "rgba(75, 192, 192, 1)",
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          borderWidth: 2,
+          fill: false,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+      ],
+    });
+  } catch (error) {
+    console.error("Error fetching line graph data:", error);
+  }
+};
+
+useEffect(() => {
+  if (dateRange[0] && dateRange[1]) {
+    fetchLineGraph();
+  }
+}, [dateRange]);
+
+const lineChartOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+    },
+    tooltip: {
+      enabled: true,
+    },
+    datalabels: {
+      color: '#000',
+      align: 'top',
+      anchor: 'center',
+      font: {
+        size: 12,
+        weight: 'bold',
       },
     },
-  };
-  
-  
-  const barData = {
-    labels: ['B222', 'B233'], // X-axis labels (material numbers)
-    datasets: [
-      {
-        label: 'White',
-        data: [20, 17], // Values for White shift
-        backgroundColor: '#C4E4FF', // White color
-        borderColor: '#C4E4FF', // Border color for White
-        borderWidth: 1,
+  },
+  scales: {
+    x: {
+      title: {
+        display: true,
+        text: 'Date', // Sesuaikan dengan data tanggal dari API
+        font: {
+          size: 12,
+          weight: 'bold',
+        },
       },
-      {
-        label: 'Red',
-        data: [33, 65], // Values for Red shift
-        backgroundColor: '#C63C51', // Red color
-        borderColor: '#C63C51', // Border color for Red
-        borderWidth: 1,
+    },
+    y: {
+      beginAtZero: true,
+      title: {
+        display: true,
+        text: 'Frequency', // Jumlah Material Red Post
+        font: {
+          size: 12,
+          weight: 'bold',
+        },
       },
-    ],
+    },
+  },
+  elements: {
+    line: {
+      tension: 0.4, // Membuat garis lebih halus
+    },
+    point: {
+      radius: 5,
+      hoverRadius: 7,
+    },
+  },
+};
+
+
+console.log("Updated Doughnut Data:", doughnutGraph); // 🔍 Debug setelah set state
+const fetchDoughnutGraph = async () => {
+  try {
+    if (!dateRange[0] || !dateRange[1]) return; // Pastikan tanggal terisi sebelum fetch data
+
+    const formattedStartDate = format(new Date(dateRange[0]), "yyyy-MM-dd");
+    const formattedEndDate = format(new Date(dateRange[1]), "yyyy-MM-dd");
+
+    console.log(`Fetching doughnut chart data from ${formattedStartDate} to ${formattedEndDate}`);
+
+    const response = await getDoughnutGraph(formattedStartDate, formattedEndDate);
+    
+    // ✅ Perbaikan: Ambil data dari response.data
+    if (!response || !response.data || !Array.isArray(response.data)) {
+      console.error("Invalid API response:", response);
+      return;
+    }
+
+    console.log("Fetched Doughnut Chart Data:", response.data); // Debug hasil API
+
+    // **Map data dengan label "Red" dan "White" sesuai ShiftId**
+    const labels = ["Red", "White"];
+    const data = [0, 0]; // Default jika tidak ada nilai
+
+    response.data.forEach((item) => {
+      if (item.ShiftId === 1) {
+        data[0] = item.count; // Red
+      } else if (item.ShiftId === 2) {
+        data[1] = item.count; // White
+      }
+    });
+
+    setDoughnutGraph({
+      labels,
+      datasets: [
+        {
+          label: "Material By Shift",
+          data,
+          backgroundColor: ["#C63C51", "#C4E4FF"], // Warna Shift 1 dan Shift 2
+          borderColor: ["#CC0000", "#DDDDDD"],
+          borderWidth: 1,
+        },
+      ],
+    });
+
+  } catch (error) {
+    console.error("Error fetching doughnut chart data:", error);
   }
+};
+
+// Fetch data saat `dateRange` berubah
+useEffect(() => {
+  if (dateRange[0] && dateRange[1]) {
+    fetchDoughnutGraph();
+  }
+}, [dateRange]);
+
+const doughnutOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: "bottom",
+      labels: {
+        boxWidth: 15,
+      },
+    },
+    datalabels: {
+      display: true,
+      color: "black",
+      font: {
+        size: 14,
+        weight: "bold",
+      },
+      formatter: (value) => value,
+      anchor: "center",
+      align: "center",
+      backgroundColor: "white",
+      borderRadius: 4,
+      padding: 6,
+    },
+  },
+  cutout: "50%", // Ukuran lubang tengah
+};
+
+
+console.log("Updated Shift Data:", shiftGraph); // 🔍 Debug setelah set state
+const fetchShiftGraph = async () => {
+  try {
+    if (!dateRange[0] || !dateRange[1]) return; // Pastikan tanggal dipilih sebelum fetch data
+
+    const formattedStartDate = format(new Date(dateRange[0]), "yyyy-MM-dd");
+    const formattedEndDate = format(new Date(dateRange[1]), "yyyy-MM-dd");
+
+    console.log(`Fetching shift graph data from ${formattedStartDate} to ${formattedEndDate}`);
+
+    const response = await getShiftGraph(formattedStartDate, formattedEndDate);
+
+    if (!response || !response.data || !Array.isArray(response.data)) {
+      console.error("Invalid API response:", response);
+      return;
+    }
+
+    console.log("Fetched Shift Graph Data:", response.data); // Debug hasil API
+
+    // **Transform Data**
+    const materialMap = new Map();
+
+    response.data.forEach((item) => {
+      const { MaterialNo, ShiftId, shiftCount } = item;
+      if (!materialMap.has(MaterialNo)) {
+        materialMap.set(MaterialNo, { White: 0, Red: 0 });
+      }
+
+      if (ShiftId === 1) {
+        materialMap.get(MaterialNo).Red = shiftCount; // Shift 1 = Red
+      } else if (ShiftId === 2) {
+        materialMap.get(MaterialNo).White = shiftCount; // Shift 2 = White
+      }
+    });
+
+    const labels = Array.from(materialMap.keys()); // Ambil semua MaterialNo
+    const redData = labels.map((material) => materialMap.get(material).Red);
+    const whiteData = labels.map((material) => materialMap.get(material).White);
+
+    setShiftGraph({
+      labels,
+      datasets: [
+        {
+          label: "White",
+          data: whiteData,
+          backgroundColor: "#C4E4FF",
+          borderColor: "#C4E4FF",
+          borderWidth: 1,
+        },
+        {
+          label: "Red",
+          data: redData,
+          backgroundColor: "#C63C51",
+          borderColor: "#C63C51",
+          borderWidth: 1,
+        },
+      ],
+    });
+
+  } catch (error) {
+    console.error("Error fetching shift graph data:", error);
+  }
+};
+
+// Fetch data saat `dateRange` berubah
+useEffect(() => {
+  if (dateRange[0] && dateRange[1]) {
+    fetchShiftGraph();
+  }
+}, [dateRange]);
 
   const barOptions = {
     responsive: true,
@@ -235,162 +552,23 @@ const Dashboard = () => {
     },
   }
 
-  const combinedData = {
-    labels: ['b444455', 'b333325', 'b300000', 'b300001'],
-    datasets: [
-      {
-        type: 'bar',
-        label: 'Bar Data',
-        data: [20, 12, 22, 40],
-        backgroundColor: '#BCCCDC',
-        borderColor: '#BCCCDC',
-        borderWidth: 1,
-        datalabels: {
-          color: '#000', // Warna teks
-          align: 'center', // Posisi di ujung bar
-          anchor: 'center', // Mengikuti ujung elemen bar
-          backgroundColor: null, // Tidak ada latar belakang
-          font: {
-            size: 12,
-            weight: 'bold',
-          },
-        },
-      },
-      {
-        type: 'line',
-        label: 'Line Data',
-        data: [21, 31, 25, 50],
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        borderColor: 'rgba(255, 99, 132, 1)',
-        borderWidth: 2,
-        tension: 0.1,
-        datalabels: {
-          color: '#000', // Warna teks
-          align: 'top', // Posisi di atas garis
-          anchor: 'center', // Di tengah-tengah elemen
-          backgroundColor: 'white', // Latar belakang putih
-          borderRadius: 4, // Radius sudut
-          padding: 4, // Padding di sekitar angka
-          font: {
-            size: 12,
-            weight: 'bold',
-          },
-        },
-      },
-    ],
-  }
+  const customSelectStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: "28px", // Kurangi tinggi select
+      height: "28px", // Pastikan tinggi tetap
+      fontSize: "10px", // Perkecil teks di dalam select
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      padding: "0px 6px", // Kurangi padding dalam select
+    }),
+    input: (base) => ({
+      ...base,
+      margin: "0px", // Hilangkan margin ekstra
+    }),
+  };
 
-  const combinedOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      tooltip: {
-        enabled: true,
-      },
-    },
-    scales: {
-      x: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Material No', // Keterangan sumbu X
-          font: {
-            size: 10,
-          },
-        },
-      },
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Frequency', // Keterangan sumbu Y
-          font: {
-            size: 10,
-          },
-        },
-      },
-    },
-  }
-
-  const tableData = [
-    {
-      materialNo: 'b972-301214',
-      mrp: 'ROP',
-      description: 'WRENCH OPEN-END STANDARD 12-14 ACESA',
-      soh2: 3,
-    },
-    {
-      materialNo: 'B972-311719',
-      mrp: 'ROP',
-      description: 'WRENCH CLOSE-END (OFFSET) 17-19 ACESA',
-      soh2: 3,
-    },
-    {
-      materialNo: 'b750-030154',
-      mrp: 'ROP',
-      description: 'WHEEL CASTOR 8" SWIV SHOCK ABSORB HAMM',
-      soh2: 2,
-    },
-    {
-      materialNo: 'b964-201003',
-      mrp: 'ROP',
-      description: 'VICE-GRIP 10 CR AMERICAN TOOL',
-      soh2: 1,
-    },
-    {
-      materialNo: 'b981-296212',
-      mrp: 'ROP',
-      description: 'VERNIER CALIPER MANUAL 100/0.001MM CANON',
-      soh2: 2,
-    },
-    {
-      materialNo: 'b836-001900',
-      mrp: 'OTH',
-      description: 'THINNER DUCO CHELSEA 0.8 LTR',
-      soh2: 58,
-    },
-    {
-      materialNo: 'b982-240153',
-      mrp: 'ROP',
-      description: 'TAPPER GAUGE 700A (0-15 MM) SHINWA',
-      soh2: 4,
-    },
-    {
-      materialNo: 'B027-122750',
-      mrp: 'NQC',
-      description: 'TAPE COTTON 2" WHITE SAZANAMI',
-      soh2: 59,
-    },
-    {
-      materialNo: 'b029-112011',
-      mrp: 'ROP',
-      description: 'TALI HELMET BP65 LOCAL',
-      soh2: 8,
-    },
-    {
-      materialNo: 'b029-392005',
-      mrp: 'ROP',
-      description: 'SUPPORTER BACK SIZE L 38"-47" KWN LM',
-      soh2: 78,
-    },
-    {
-      materialNo: 'B880-330700',
-      mrp: 'NQC',
-      description: 'SUNSPATTER RE-330M70 SUGIMURA',
-      soh2: 216,
-    },
-  ]
-  const currentPageData = tableData.slice(startIndex, startIndex + itemsPerPage)
-  const totalPages = Math.ceil(tableData.length / itemsPerPage)
-
-  const handleIconClick = () => {
-    if (datePickerRef.current) {
-      datePickerRef.current.setFocus() // Fokus ke input DatePicker
-    }
-  }
 
   return (
     <>
@@ -398,32 +576,37 @@ const Dashboard = () => {
         <CCardBody>
           <CRow >
             <CCol sm={6}>
-              <h2 id="traffic" className="card-title mb-0">
-                RED POST VISUALIZATION
-              </h2>
-              <div className="small text-body-secondary">WAREHOUSE CONSUMABLE</div>
+              <h3 id="traffic" className="card-title mb-0">
+                RED POST VISUALIZATION DASHBOARD
+              </h3>
+              <div className="small text-body-secondary italic">WAREHOUSE CONSUMABLE</div>
             </CCol>
             <CCol sm={3} className="d-none d-md-block">
-              <label htmlFor="plant" className="mb-1 form-label small">
-                MRP
-              </label>
-              <Select className="basic-single" classNamePrefix="select" isClearable />
-            </CCol>
+            <label className="form-label" style={{ fontSize: "10px" }}>MRP</label>
+            <Select
+              className="basic-single"
+              classNamePrefix="select"
+              isClearable
+              options={mrpOptions}
+              value={selectedMrp}
+              onChange={setSelectedMrp}
+              placeholder="Select MRP"
+            />
+          </CCol>
             <CCol sm={3} className="d-none d-md-block">
-            <label htmlFor="dateRange" className="mb-1 form-label small">
+            <label htmlFor="dateRange" className="form-label" style={{ fontSize: "10px" }}>
               Date Range
             </label>
             <CInputGroup>
-              <DatePicker
-                ref={datePickerRef}
-                selectsRange // Mengaktifkan pemilihan rentang tanggal
-                startDate={startDate} // Tanggal awal
-                endDate={endDate} // Tanggal akhir
-                onChange={(update) => setDateRange(update)} // Update state saat tanggal berubah
-                dateFormat="yyyy-MM-dd" // Format tanggal
-                className="form-control"
-                placeholderText="Select a date range" // Placeholder saat belum ada tanggal
-              />
+            <DatePicker
+              selectsRange
+              startDate={dateRange[0]}
+              endDate={dateRange[1]}
+              onChange={(update) => setDateRange(update)} // ✅ Simpan tanggal yang dipilih
+              dateFormat="yyyy-MM-dd"
+              className="form-control"
+              placeholderText="Select a date range"
+            />
               <CInputGroupText style={{ width: '40px' }} onClick={handleIconClick}>
                 <CIcon icon={cilCalendar} />
               </CInputGroupText>
@@ -433,12 +616,12 @@ const Dashboard = () => {
           <hr />
           <CRow>
             <CCol sm={2}>
-              <CCard className="mb-1 mt-1">
+            <CCard className="mb-1 mt-1">
                 <CCardHeader className="text-muted small text-center fw-bold">
                   Total Red Post
                 </CCardHeader>
                 <CCardBody className="text-center">
-                  <CCardText className="fs-1 fw-bold">46</CCardText>
+                  <CCardText className="fs-1 fw-bold">{cardData?.totalRedPost || "-"}</CCardText>
                 </CCardBody>
               </CCard>
 
@@ -447,55 +630,54 @@ const Dashboard = () => {
                   SOH ＞ 0
                 </CCardHeader>
                 <CCardBody className="text-center">
-                  <CCardText className="fs-1 fw-bold">25</CCardText>
+                  <CCardText className="fs-1 fw-bold">{cardData?.totalSoh || "-"}</CCardText>
                 </CCardBody>
               </CCard>
-
-              <div className="mb-3 mt-3" style={{ width: '100%', height: '15rem' }}>
+              <div className="mb-3 mt-3" style={{ width: "100%", height: "15rem" }}>
                 <h6 className="text-center">Total Material By Shift</h6>
-                <div style={{ width: '100%', height: '97%' }}>
-                  <Doughnut data={doughnutData} options={doughnutOptions} />
+                <div style={{ width: "100%", height: "97%" }}>
+                  {doughnutGraph ? (
+                    <Doughnut data={doughnutGraph} options={doughnutOptions} />
+                  ) : (
+                    <p>Loading...</p> // Prevent render error jika data masih kosong
+                  )}
                 </div>
               </div>
             </CCol>
             <CCol lg={10} sm={10} xs={12}>
               <CRow>
               <CCol lg={5} sm={6} xs={12}>
-                <div className="mb-2 mt-2">
-                  <h6>Summary Material & SOH </h6>
-                  <div style={{ width: '100%', height: '15rem' }}>
-                    {' '}
-                    {/* Responsive dan tinggi tetap */}
-                    <Bar data={combinedData} options={combinedOptions} />
-                  </div>
+              <div className="mb-2 mt-2">
+                <h6>Summary Material & SOH</h6>
+                <div style={{ width: "100%", height: "15rem" }}>
+                  {combGraphData ? <Bar data={combGraphData} options={combinedOptions} /> : <p>Loading...</p>}
                 </div>
+              </div>
                 </CCol>
                 <CCol lg={7} sm={6} xs={12}>
                 <div className="mb-2 mt-2">
-                  <h6>Summary Red Post (Last 2 Weeks)</h6>
+                  <h6>Summary Red Post</h6>
                   <div style={{ width: '100%', height: '100%' }}>
-                    {' '}
-                    {/* Responsive dan tinggi tetap */}
-                    <Bar data={lineChartData} options={lineChartOptions } />
+                    {lineGraph.labels.length > 0 ? (
+                      <Line data={lineGraph} options={lineChartOptions} />
+                    ) : (
+                      <p>Loading...</p> // ❗ Mencegah error dengan menunggu data
+                    )}
                   </div>
                 </div>
                 </CCol>
                 </CRow>
-                <CRow>
-             
+                <CRow>    
                 <div className="mb-2 mt-2">
                   <h6>Material Numbers by Shift</h6>
                   <div style={{ width: '100%', height: '15rem' }}>
-                    <Bar
-                      data={barData}
-                      options={{
-                        ...barOptions,
-                        maintainAspectRatio: false, // Pastikan aspek rasio tidak dipertahankan
-                      }}
-                    />
+                    {shiftGraph && shiftGraph.labels && shiftGraph.labels.length > 0 ? (
+                      <Bar data={shiftGraph} options={barOptions} />
+                    ) : (
+                      <p>Loading...</p> // ✅ Mencegah error jika shiftGraph masih kosong
+                    )}
                   </div>
                 </div>
-      
               </CRow>
               </CCol>
               <CCol xs={12}>
@@ -517,9 +699,9 @@ const Dashboard = () => {
                     <CTableBody>
                       {currentPageData.map((item, index) => (
                         <CTableRow key={index}>
-                          <CTableDataCell>{item.materialNo}</CTableDataCell>
-                          <CTableDataCell>{item.mrp}</CTableDataCell>
-                          <CTableDataCell>{item.description}</CTableDataCell>
+                          <CTableDataCell>{item.MaterialNo}</CTableDataCell>
+                          <CTableDataCell>{item.Mrp}</CTableDataCell>
+                          <CTableDataCell>{item.Description}</CTableDataCell>
                           <CTableDataCell>{item.soh2}</CTableDataCell>
                         </CTableRow>
                       ))}

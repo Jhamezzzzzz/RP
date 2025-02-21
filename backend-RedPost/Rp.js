@@ -22,7 +22,8 @@ app.use(
   cors({
     // credentials: true,
     origin: [
-      "http://localhost:3001",
+      "http://localhost:3005",
+      "https://redpost-warehouse.web.app",
     ],
   })
 );

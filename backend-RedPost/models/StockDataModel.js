@@ -15,7 +15,7 @@ const StockData = db.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    MaterialNo: {
+    materialNo: {
       type: DataTypes.STRING,
       allowNull: false,
     },
