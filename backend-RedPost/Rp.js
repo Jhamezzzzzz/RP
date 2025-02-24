@@ -5,7 +5,7 @@ import cors from "cors";
 // import https from "https";
 // import fs from "fs";
 // import path from "path";
-import "./models/index.js";
+import "./index.js";
 import DashboardRouter from "./routes/DashboardRouter.js";
 import dataMasterRouter from "./routes/DataMasterRouter.js";
 import inputRedPost from "./routes/InputRedPost.js";

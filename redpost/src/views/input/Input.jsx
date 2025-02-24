@@ -230,12 +230,14 @@ console.log("shiftOptions",shiftOptions);
   }, []);
   
 
+
   
   const fetchSohData = async (materialNo) => {
     setLoading(true);
     try {
       const response = await getSohData(materialNo);
       console.log("cek soh:", response.data.soh);
+
       setSohData(response.data.soh);
       setStockId(response.data.id);
     } catch (error) {
@@ -954,12 +956,8 @@ console.log("shiftOptions",shiftOptions);
                                     />
                                   </div>
                           </CTableDataCell>
-                          <CTableDataCell className="align-middle">
-                              {console.log("Item StockDataId: ", item.StockDataId)}
-                              {console.log("SOH StockDataId: ", item.sohData)}
-                              {sohData && sohData.StockDataId === item.StockDataId
-                                ? item.sohData
-                                : "Loading..."}
+                          <CTableDataCell className="align-middle"> 
+                              {sohData}
                             </CTableDataCell>
 
                           <CTableDataCell

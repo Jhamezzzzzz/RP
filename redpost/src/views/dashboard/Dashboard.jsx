@@ -76,13 +76,16 @@ const Dashboard = () => {
     labels: [],
     datasets: [],
   });
-  const [dateRange, setDateRange] = useState([null, null]); // Simpan tanggal
+
   const [cardData, setCardData] = useState(null);
   const [doughnutGraph, setDoughnutGraph] = useState({
     labels: [],
     datasets: [],
   });
-  
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const [dateRange, setDateRange] = useState([firstDayOfMonth, today]);
+
   const fetchData = async () => {
     try {
       const response = await getInput();

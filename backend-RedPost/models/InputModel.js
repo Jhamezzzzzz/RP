@@ -59,6 +59,8 @@ InputRedPost.belongsTo(Pic, { foreignKey: "PicId" });
 
 StockData.hasMany(InputRedPost, { foreignKey: "StockDataId" });
 InputRedPost.belongsTo(StockData, { foreignKey: "StockDataId" });
+
+
 export default InputRedPost;
 
 
