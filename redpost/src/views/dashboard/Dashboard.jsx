@@ -82,9 +82,15 @@ const Dashboard = () => {
     labels: [],
     datasets: [],
   });
-  const today = new Date();
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const [dateRange, setDateRange] = useState([firstDayOfMonth, today]);
+  const firstDayOfMonth = new Date();
+  firstDayOfMonth.setDate(1);
+
+  // Ambil tanggal besok
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Set date range awal
+  const [dateRange, setDateRange] = useState([firstDayOfMonth, tomorrow]);
 
   const fetchData = async () => {
     try {
@@ -192,8 +198,12 @@ useEffect(() => {
             type: "bar",
             label: "Red Post Count",
             data: barData,
-            backgroundColor: "#C63C51",
-            borderColor: "#C63C51",
+            backgroundColor: barData.map((_, index) =>
+              index % 2 === 0 ? "#BCCCDC" : "#9AA6B2"
+            ), // 🔹 Selang-seling abu-abu dan hijau
+            borderColor: barData.map((_, index) =>
+              index % 2 === 0 ? "#BCCCDC" : "#9AA6B2"
+            ),
             borderWidth: 1,
           },
         ],
@@ -216,28 +226,49 @@ useEffect(() => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "top",
+        display: false, // 🔹 Sembunyikan legend
+        position: "top", // Legend di bagian atas
+        align: "end", // Legend sejajar ke kanan
+        labels: {
+          font: {
+            size: 8,
+          },
+        },
       },
       tooltip: {
         enabled: true,
+      },
+      datalabels: { // Menampilkan label data di atas batang
+        color: "black", // Warna teks putih
+        anchor: "end", // Letakkan di atas
+        align: "bottom",
+        font: {
+          weight: "bold",
+          size: 14,
+        },
       },
     },
     scales: {
       x: {
         beginAtZero: true,
         title: {
-          display: true,
-          text: "Material No",
-          font: {
-            size: 10,
-          },
+            display: true,
+            text: "Material No",
+            font: {
+                size: 10
+            }
         },
-      },
+        ticks: {
+            font: {
+                size: 8 // Ukuran font label di sumbu X lebih kecil
+            }
+        }
+    }, 
       y: {
         beginAtZero: true,
         title: {
           display: true,
-          text: "Red Post Count",
+          text: "Material Count",
           font: {
             size: 10,
           },
@@ -245,6 +276,7 @@ useEffect(() => {
       },
     },
   };
+  
 
 
 
@@ -274,7 +306,7 @@ const fetchLineGraph = async () => {
       datasets: [
         {
           type: "line",
-          label: "Frequency Material Red Post",
+          label: "Freq.Red Post",
           data: lineData,
           borderColor: "rgba(75, 192, 192, 1)",
           backgroundColor: "rgba(75, 192, 192, 0.2)",
@@ -300,7 +332,13 @@ const lineChartOptions = {
   responsive: true,
   plugins: {
     legend: {
-      position: 'top',
+      position: "top", // Legend di bagian atas
+      align: "start", // Legend sejajar ke kiri
+      labels: {
+        font: {
+          size: 12,
+        },
+      },
     },
     tooltip: {
       enabled: true,
@@ -321,8 +359,7 @@ const lineChartOptions = {
         display: true,
         text: 'Date', // Sesuaikan dengan data tanggal dari API
         font: {
-          size: 12,
-          weight: 'bold',
+          size: 10,
         },
       },
     },
@@ -332,8 +369,7 @@ const lineChartOptions = {
         display: true,
         text: 'Frequency', // Jumlah Material Red Post
         font: {
-          size: 12,
-          weight: 'bold',
+          size: 10,
         },
       },
     },
@@ -459,15 +495,15 @@ const fetchShiftGraph = async () => {
     const materialMap = new Map();
 
     response.data.forEach((item) => {
-      const { MaterialNo, ShiftId, shiftCount } = item;
-      if (!materialMap.has(MaterialNo)) {
-        materialMap.set(MaterialNo, { White: 0, Red: 0 });
+      const { Description, ShiftId, shiftCount } = item;
+      if (!materialMap.has(Description)) {
+        materialMap.set(Description, { White: 0, Red: 0 });
       }
 
       if (ShiftId === 1) {
-        materialMap.get(MaterialNo).Red = shiftCount; // Shift 1 = Red
+        materialMap.get(Description).Red = shiftCount; // Shift 1 = Red
       } else if (ShiftId === 2) {
-        materialMap.get(MaterialNo).White = shiftCount; // Shift 2 = White
+        materialMap.get(Description).White = shiftCount; // Shift 2 = White
       }
     });
 
@@ -536,11 +572,25 @@ useEffect(() => {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Material No', // Keterangan sumbu X
+          text: 'Description', // Keterangan sumbu X
           font: {
-            size: 10,
+            size: 10, // Ukuran font judul sumbu X
           },
         },
+        ticks: {
+          font: {
+            size: 8, // Ukuran font label di sumbu X lebih kecil
+          },
+          callback: function (value, index, ticks) {
+            const item = shiftGraph.labels[index]; // Ambil data berdasarkan index
+        
+            if (!item || typeof item !== "string") return ""; // Pastikan item valid
+        
+            const descSubstring = item.length > 19 ? item.substring(0, 16) + "..." : item; // Batasi panjang
+            return descSubstring.split(" "); // Wrap text jika ada spasi
+          },
+        },
+        
       },
       y: {
         beginAtZero: true,
@@ -572,19 +622,35 @@ useEffect(() => {
     }),
   };
 
+  const blinkStyle = {
+    color: "red",
+    animation: "blink 8s infinite"
+  };
+
 
   return (
     <>
       <CCard className="mb-2">
         <CCardBody>
           <CRow >
-            <CCol sm={6}>
-              <h3 id="traffic" className="card-title mb-0">
+            <CCol sm={9}>
+            <div>
+              <h3 id="traffic" className="card-title" style={blinkStyle}>
                 RED POST VISUALIZATION DASHBOARD
               </h3>
+
+              <style>
+                {`
+                  @keyframes blink {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0; }
+                  }
+                `}
+              </style>
+            </div>
               <div className="small text-body-secondary italic">WAREHOUSE CONSUMABLE</div>
             </CCol>
-            <CCol sm={3} className="d-none d-md-block">
+            {/* <CCol sm={3} className="d-none d-md-block">
             <label className="form-label" style={{ fontSize: "10px" }}>MRP</label>
             <Select
               className="basic-single"
@@ -595,21 +661,21 @@ useEffect(() => {
               onChange={setSelectedMrp}
               placeholder="Select MRP"
             />
-          </CCol>
-            <CCol sm={3} className="d-none d-md-block">
-            <label htmlFor="dateRange" className="form-label" style={{ fontSize: "10px" }}>
-              Date Range
-            </label>
-            <CInputGroup>
-            <DatePicker
-              selectsRange
-              startDate={dateRange[0]}
-              endDate={dateRange[1]}
-              onChange={(update) => setDateRange(update)} // ✅ Simpan tanggal yang dipilih
-              dateFormat="yyyy-MM-dd"
-              className="form-control"
-              placeholderText="Select a date range"
-            />
+          </CCol> */}
+           <CCol sm={3} >
+              <label htmlFor="dateRange" className="form-label" style={{ fontSize: "12px" }}>
+                Date Range
+              </label>
+              <CInputGroup >
+                <DatePicker
+                  selectsRange
+                  startDate={dateRange[0]}
+                  endDate={dateRange[1]}
+                  onChange={(update) => setDateRange(update)}
+                  dateFormat="yyyy-MM-dd"
+                  className="form-control"
+                  placeholderText="Select a date range"
+                />
               <CInputGroupText style={{ width: '40px' }} onClick={handleIconClick}>
                 <CIcon icon={cilCalendar} />
               </CInputGroupText>
@@ -618,8 +684,8 @@ useEffect(() => {
           </CRow>
           <hr />
           <CRow>
-            <CCol sm={2}>
-            <CCard className="mb-1 mt-1">
+            <CCol lg={2} sm={2} xs={2}>
+            <CCard className="mb-1 ">
                 <CCardHeader className="text-muted small text-center fw-bold">
                   Total Red Post
                 </CCardHeader>
@@ -636,53 +702,53 @@ useEffect(() => {
                   <CCardText className="fs-1 fw-bold">{cardData?.totalSoh || "-"}</CCardText>
                 </CCardBody>
               </CCard>
-              <div className="mb-3 mt-3" style={{ width: "100%", height: "15rem" }}>
-                <h6 className="text-center">Total Material By Shift</h6>
-                <div style={{ width: "100%", height: "97%" }}>
-                  {doughnutGraph ? (
-                    <Doughnut data={doughnutGraph} options={doughnutOptions} />
-                  ) : (
-                    <p>Loading...</p> // Prevent render error jika data masih kosong
-                  )}
-                </div>
-              </div>
+             
             </CCol>
-            <CCol lg={10} sm={10} xs={12}>
-              <CRow>
-              <CCol lg={5} sm={6} xs={12}>
-              <div className="mb-2 mt-2">
-                <h6>Summary Material & SOH</h6>
+              <CCol lg={10} sm={6} xs={12}>
+              <div className="mb-2 mt-1">
+                <h6>Summary Red Post By Material No</h6>
                 <div style={{ width: "100%", height: "15rem" }}>
                   {combGraphData ? <Bar data={combGraphData} options={combinedOptions} /> : <p>Loading...</p>}
                 </div>
               </div>
                 </CCol>
-                <CCol lg={7} sm={6} xs={12}>
-                <div className="mb-2 mt-2">
-                  <h6>Summary Red Post</h6>
-                  <div style={{ width: '100%', height: '100%' }}>
+              
+                </CRow>
+                <CRow className="align-items-center">   
+                  <CCol lg={2} sm={6} xs={12} className="mb-1 mt-1">
+                    <h6 className="text-center">Total Material By Shift</h6>
+                    <div style={{ width: "100%", height: "12rem" }}>
+                      {doughnutGraph ? (
+                        <Doughnut data={doughnutGraph} options={doughnutOptions} />
+                      ) : (
+                        <p>Loading...</p> // Prevent render error jika data masih kosong
+                      )}
+                    </div>
+                    </CCol>
+                    <CCol lg={10} sm={6} xs={12}>
+                <div className="mb-2 mt-1">
+                  <h6>Summary Red Post By Date </h6>
+                  <div style={{ width: '100%', height: '15rem' }}>
                     {lineGraph.labels.length > 0 ? (
-                      <Line data={lineGraph} options={lineChartOptions} />
+                      <Bar data={lineGraph} options={lineChartOptions} />
                     ) : (
                       <p>Loading...</p> // ❗ Mencegah error dengan menunggu data
                     )}
                   </div>
                 </div>
                 </CCol>
+                  {/* </CCol>
+                    <h6>Summary Red Post Material No By Shift</h6>
+                    <div style={{ width: "100%", height: "20rem" }}>
+                      {shiftGraph && shiftGraph.labels && shiftGraph.labels.length > 0 ? (
+                        <Bar data={shiftGraph} options={barOptions} />
+                      ) : (
+                        <p>Loading...</p> // ✅ Mencegah error jika shiftGraph masih kosong
+                      )}
+                    </div>
+                  <CCol md="9" className="mb-2 mt-2"> */}
+                  
                 </CRow>
-                <CRow>    
-                <div className="mb-2 mt-2">
-                  <h6>Material Numbers by Shift</h6>
-                  <div style={{ width: '100%', height: '15rem' }}>
-                    {shiftGraph && shiftGraph.labels && shiftGraph.labels.length > 0 ? (
-                      <Bar data={shiftGraph} options={barOptions} />
-                    ) : (
-                      <p>Loading...</p> // ✅ Mencegah error jika shiftGraph masih kosong
-                    )}
-                  </div>
-                </div>
-              </CRow>
-              </CCol>
               <CCol xs={12}>
                 <hr/>
               <CRow>
@@ -696,7 +762,7 @@ useEffect(() => {
                         <CTableHeaderCell>Material No</CTableHeaderCell>
                         <CTableHeaderCell>MRP</CTableHeaderCell>
                         <CTableHeaderCell>Description</CTableHeaderCell>
-                        <CTableHeaderCell>SOH2</CTableHeaderCell>
+                        <CTableHeaderCell>SOH</CTableHeaderCell>
                       </CTableRow>
                     </CTableHead>
                     <CTableBody>
@@ -705,7 +771,7 @@ useEffect(() => {
                           <CTableDataCell>{item.MaterialNo}</CTableDataCell>
                           <CTableDataCell>{item.Mrp}</CTableDataCell>
                           <CTableDataCell>{item.Description}</CTableDataCell>
-                          <CTableDataCell>{item.soh2}</CTableDataCell>
+                          <CTableDataCell> {item.StockDatum?.soh}   </CTableDataCell>
                         </CTableRow>
                       ))}
                     </CTableBody>
@@ -737,7 +803,6 @@ useEffect(() => {
                 </div>
               </CRow>
             </CCol>
-          </CRow>
         </CCardBody>
       </CCard>
     </>

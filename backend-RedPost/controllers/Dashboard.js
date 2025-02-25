@@ -20,6 +20,7 @@ export const getCardData = async (req, res) => {
         createdAt: {
           [Op.between]: [startDate, endDate], // ✅ Filter berdasarkan rentang tanggal
         },
+        flag: 1, // ✅ Hanya data dengan flag 
       },
     });
 
@@ -37,6 +38,7 @@ export const getCardData = async (req, res) => {
         createdAt: {
           [Op.between]: [startDate, endDate], // ✅ Filter berdasarkan rentang tanggal
         },
+        flag: 1, // ✅ Hanya data dengan flag 
       },
     });
 
@@ -61,7 +63,8 @@ export const getCombinationGraph = async (req, res) => {
       ],
       where: {
         soh: { [Op.gt]: 0 },
-        createdAt: { [Op.between]: [startDate, endDate] } // ✅ Gunakan Op.between untuk range
+        createdAt: { [Op.between]: [startDate, endDate] }, // ✅ Gunakan Op.between untuk range
+        flag: 1, // ✅ Hanya data dengan flag 
       },
       group: ['MaterialNo']
     });
@@ -73,7 +76,8 @@ export const getCombinationGraph = async (req, res) => {
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'redPostCount']
       ],
       where: {
-        createdAt: { [Op.between]: [startDate, endDate] } // ✅ Rentang tanggal
+        createdAt: { [Op.between]: [startDate, endDate] },
+        flag: 1, // ✅ Hanya data dengan flag // ✅ Rentang tanggal
       },
       group: ['MaterialNo']
     });
@@ -96,7 +100,8 @@ export const getLineGraph = async (req, res) => {
         [Sequelize.fn('COUNT', Sequelize.col('MaterialNo')), 'materialCount'],
       ],
       where: {
-        createdAt: { [Op.between]: [startDate, endDate] } // ✅ Gunakan Op.between untuk range
+        createdAt: { [Op.between]: [startDate, endDate] },
+        flag: 1, // ✅ Hanya data dengan flag  // ✅ Gunakan Op.between untuk range
       },
       group: [Sequelize.literal("CONVERT(DATE, createdAt)")]
     });
@@ -122,6 +127,7 @@ export const getDoughnutChart = async (req, res) => {
         createdAt: {
           [Sequelize.Op.between]: [startDate, endDate], // Filter berdasarkan range tanggal
         },
+        flag: 1, // ✅ Hanya data dengan flag 
       },
       group: ['ShiftId'],
     });
@@ -143,16 +149,17 @@ export const getBarShiftGraph = async (req, res) => {
 
     const data = await InputRedPost.findAll({
       attributes: [
-        'MaterialNo',
+        'Description',
         'ShiftId',
         [Sequelize.fn('COUNT', Sequelize.col('ShiftId')), 'shiftCount'],
       ],
       where: {
         createdAt: {
           [Sequelize.Op.between]: [new Date(startDate), new Date(endDate)]
-        }
+        },
+        flag: 1, // ✅ Hanya data dengan flag 
       },
-      group: ['MaterialNo', 'ShiftId'],
+      group: ['Description', 'ShiftId'],
     });
 
     res.status(200).json(data);
