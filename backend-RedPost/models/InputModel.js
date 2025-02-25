@@ -54,8 +54,8 @@ const InputRedPost = db.define(
 Shift.hasMany(InputRedPost, { foreignKey: "ShiftId" });
 InputRedPost.belongsTo(Shift, { foreignKey: "ShiftId" });
 
-Pic.hasMany(InputRedPost, { foreignKey: "PicName" });
-InputRedPost.belongsTo(Pic, { foreignKey: "PicName" });
+// Pic.hasMany(InputRedPost, { foreignKey: "PicName" });
+// InputRedPost.belongsTo(Pic, { foreignKey: "PicName" });
 
 StockData.hasMany(InputRedPost, { foreignKey: "StockDataId" });
 InputRedPost.belongsTo(StockData, { foreignKey: "StockDataId" });
