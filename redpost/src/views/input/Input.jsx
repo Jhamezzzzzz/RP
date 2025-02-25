@@ -3,7 +3,7 @@ import { FilterMatchMode } from 'primereact/api'
 import { IconField } from 'primereact/iconfield'
 import { InputIcon } from 'primereact/inputicon'
 import { InputText } from 'primereact/inputtext'
-
+import * as XLSX from "xlsx";
 import {
   CCard,
   CCardHeader,
@@ -48,6 +48,7 @@ import useInputService from '../../services/InputDataService'
 import usePicService from '../../services/PicService'
 import useShiftService from '../../services/ShiftService'
 import useStockDataService from '../../services/StockDataService'
+// import useVerify from '../hooks/useVerify2'
 import { AbortedDeferredError } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 
@@ -128,6 +129,7 @@ const InputInventory = () => {
       fetchData()
     }, [])
 
+    
 
     const getInventories = async () => {
       try {
@@ -230,12 +232,14 @@ console.log("shiftOptions",shiftOptions);
   }, []);
   
 
+
   
   const fetchSohData = async (materialNo) => {
     setLoading(true);
     try {
       const response = await getSohData(materialNo);
       console.log("cek soh:", response.data.soh);
+
       setSohData(response.data.soh);
       setStockId(response.data.id);
     } catch (error) {
@@ -292,7 +296,7 @@ console.log("shiftOptions",shiftOptions);
         setSelectedMrp(null);
         setSelectedDescription(null);
         setSelectedCard(null);
-        setQtyRec(0);
+        setQtyRec(null);
         setStockId(null);
       }
     } catch (error) {
@@ -388,52 +392,52 @@ console.log("shiftOptions",shiftOptions);
   }
 
   const exportExcel = () => {
-    import('xlsx').then((xlsx) => {
-      // Map data dari tabel menjadi format yang sesuai
-      const mappedData = data.map((item, index) => ({
+    import("xlsx").then((xlsx) => {
+      // 🔹 Mapping data dari tabel agar sesuai dengan format Excel
+      const mappedData = currentItems.map((item, index) => ({
         No: index + 1,
-        Date: item.date,
-        PIC: item.pic,
-        Shift: item.shift,
-        'Material No': item.materialNo,
-        Description: item.description,
-        Address: item.address,
-        'MRP Type': item.mrpType,
-        'Card No': item.cardNo,
-        'Qty ROP': item.qtyROP,
-        'Qty Rec': item.qtyRec,
-        SOH: item.soh,
-      }))
-
-      // Buat worksheet dari data yang telah dimapping
-      const worksheet = xlsx.utils.json_to_sheet(mappedData)
-
-      // Buat workbook baru dan tambahkan worksheet
-      const workbook = xlsx.utils.book_new()
-      xlsx.utils.book_append_sheet(workbook, worksheet, 'Table Data')
-
-      // Konversi workbook menjadi buffer array
+        Date: item.InputDate,
+        PIC: picOptions.find((pic) => pic.value === item.PicId)?.label || "",
+        Shift: shiftOptions.find((shift) => shift.value === item.ShiftId)?.label || "",
+        "Material No": item.MaterialNo,
+        Description: item.Description,
+        Address: item.Address,
+        "MRP Type": item.Mrp,
+        "Card No": item.CardNo,
+        "Qty Rec": item.QtyReq,
+        SOH: item.StockDatum?.soh || 0, // Pastikan SOH tetap terisi
+      }));
+  
+      // 🔹 Buat worksheet dari data yang telah dimapping
+      const worksheet = xlsx.utils.json_to_sheet(mappedData);
+  
+      // 🔹 Buat workbook baru dan tambahkan worksheet
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Data");
+  
+      // 🔹 Konversi workbook menjadi buffer array
       const excelBuffer = xlsx.write(workbook, {
-        bookType: 'xlsx',
-        type: 'array',
-      })
-
-      // Fungsi untuk menyimpan file Excel
-      saveAsExcelFile(excelBuffer, 'Data Red Post')
-    })
-  }
-
-  // Fungsi untuk menyimpan file Excel
+        bookType: "xlsx",
+        type: "array",
+      });
+  
+      // 🔹 Simpan file Excel
+      saveAsExcelFile(excelBuffer, "Data Red Post");
+    });
+  };
+  
+  // ✅ Fungsi untuk menyimpan file Excel dengan nama yang mencantumkan tanggal
   const saveAsExcelFile = (buffer, fileName) => {
-    import('file-saver').then((FileSaver) => {
-      const today = new Date()
-      const formattedDate = today.toISOString().split('T')[0] // Format: YYYY-MM-DD
-      const fileWithDate = `${fileName} ${formattedDate}.xlsx` // Tambahkan tanggal ke nama file
-
-      const data = new Blob([buffer], { type: 'application/octet-stream' })
-      FileSaver.saveAs(data, fileWithDate)
-    })
-  }
+    import("file-saver").then((FileSaver) => {
+      const today = new Date();
+      const formattedDate = today.toISOString().split("T")[0]; // Format: YYYY-MM-DD
+      const fileWithDate = `${fileName} ${formattedDate}.xlsx`; // Tambahkan tanggal ke nama file
+  
+      const data = new Blob([buffer], { type: "application/octet-stream" });
+      FileSaver.saveAs(data, fileWithDate);
+    });
+  };
+  
 
   const handleMaterialNoChange = (selectedMaterial) => {
     console.log("Selected Material:", selectedMaterial);
@@ -720,7 +724,7 @@ console.log("shiftOptions",shiftOptions);
                 <CRow>
                   <CCol xs={12} sm={6} md={3} xl={3} className="mt-1">
                     <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
-                    {`Quantity Over (${baseUom})`}
+                    {`Quantity Input (${baseUom})`}
                     </CFormLabel>
                     <CFormInput
                       type="number"
@@ -774,20 +778,11 @@ console.log("shiftOptions",shiftOptions);
                   <div className="d-flex flex-wrap justify-content-start">
                     <Button
                       type="button"
-                      label={isFormVisible ? 'Hide' : 'Show'}
+                      label={isFormVisible ? 'Hide Input' : 'Show Input'}
                       icon={isFormVisible ? 'pi pi-minus' : 'pi pi-plus'}
                       severity="primary"
                       className="rounded-3 me-2 mb-2"
                       onClick={() => setIsFormVisible((prev) => !prev)}
-                    />
-                    <Button
-                      type="button"
-                      label="Upload"
-                      icon="pi pi-file-import"
-                      severity="primary"
-                      className="rounded-3 me-2 mb-2"
-                      onClick={showModalUpload}
-                      data-pr-tooltip="XLS"
                     />
                     <Button
                       type="button"
@@ -944,7 +939,6 @@ console.log("shiftOptions",shiftOptions);
                                   <span>{item.QtyReq}</span> {/* Display current value if not in edit mode */}
                                 </div>
                               )}
-
                                     <CIcon
                                       className="ms-2"
                                       icon={cilPencil}
@@ -954,12 +948,8 @@ console.log("shiftOptions",shiftOptions);
                                     />
                                   </div>
                           </CTableDataCell>
-                          <CTableDataCell className="align-middle">
-                              {console.log("Item StockDataId: ", item.StockDataId)}
-                              {console.log("SOH StockDataId: ", item.sohData)}
-                              {sohData && sohData.StockDataId === item.StockDataId
-                                ? item.sohData
-                                : "Loading..."}
+                          <CTableDataCell className="align-middle"> 
+                              {item.StockDatum?.soh}
                             </CTableDataCell>
 
                           <CTableDataCell
@@ -977,72 +967,21 @@ console.log("shiftOptions",shiftOptions);
                       ))}
                     </CTableBody>
                   </CTable>
-                  <div className="d-flex justify-content-between align-items-center mt-3">
-        <CButton disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>Previous</CButton>
-        <span>Page {currentPage} of {totalPages}</span>
-        <CButton disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>Next</CButton>
-      </div>
-                </div>
-
-                <div className="d-flex justify-content-center">
-                  <Pagination
-                    totalPages={items.length > 0 ? Math.ceil(items.length / itemsPerPage) : 1} // Menentukan total halaman
-                  />
+                  <div className="d-flex justify-content-center align-items-center mt-3">
+                    <CButton disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
+                      Previous
+                    </CButton>
+                    <span className="mx-3">Page {currentPage} of {totalPages}</span>
+                    <CButton disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
+                      Next
+                    </CButton>
+                  </div>
                 </div>
               </CRow>
             </CCardBody>
           </CForm>
         </CCard>
       </CCol>
-      <CModal visible={modalUpload} onClose={() => setModalUpload(false)}>
-        <CModalHeader>
-          <CModalTitle id="LiveDemoExampleLabel">Upload Master Material</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <div className="mb-3">
-            <CFormLabel>Date</CFormLabel>
-            <Flatpickr
-              value={date}
-              options={{
-                dateFormat: 'Y-m-d',
-                maxDate: new Date(),
-                allowInput: true,
-              }}
-              onChange={handleDateChange}
-              className="form-control"
-              placeholder="Select a date"
-            />
-          </div>
-          <div className="mb-3">
-            <CFormInput
-              onChange={handleFileChange} // Handle perubahan file
-              type="file"
-              label="Excel File"
-              accept=".xlsx" // Hanya menerima file Excel
-            />
-          </div>
-        </CModalBody>
-        <CModalFooter>
-          <Suspense
-            fallback={
-              <div className="pt-3 text-center">
-                <CSpinner color="primary" variant="grow" />
-              </div>
-            }
-          >
-            <CButton color="primary" onClick={() => handleImport()}>
-              {loadingImport ? (
-                <>
-                  <CSpinner component="span" size="sm" variant="grow" className="me-2" />
-                  Importing...
-                </>
-              ) : (
-                'Import'
-              )}
-            </CButton>
-          </Suspense>
-        </CModalFooter>
-      </CModal>
     </CRow>
   )
 }

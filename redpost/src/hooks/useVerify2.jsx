@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { jwtDecode } from 'jwt-decode'
 import { useNavigate } from 'react-router-dom'
-import axiosInstance from '../utils/AxiosInstance'
-import swal from 'sweetalert2'
-import withReactContent from 'sweetalert2-react-content'
-
-const MySwal = withReactContent(swal)
+import axiosInstance from '../utils/AxiosInstance.jsx'
+import TemplateToast from '../components/TemplateToast.jsx'
+import { useToast } from '../App.jsx'
 
 const useVerify = () => {
   const [name, setName] = useState('')
@@ -16,6 +14,7 @@ const useVerify = () => {
   const [isWarehouse, setIsWarehouse] = useState(0)
   const [imgProfile, setImgProfile] = useState('')
   const navigate = useNavigate()
+  const addToast = useToast()
 
   useEffect(() => {
     refreshToken()
@@ -23,9 +22,7 @@ const useVerify = () => {
 
   const refreshToken = async () => {
     try {
-      console.log("tes")
       const response = await axiosInstance.get('/token')
-      console.log("ACCESSTOKEN :", response)
       setToken(response.data.accessToken)
       const decoded = jwtDecode(response.data.accessToken)
       setName(decoded.name)
@@ -36,12 +33,9 @@ const useVerify = () => {
       setImgProfile(decoded.img)
     } catch (error) {
       console.error('Error refreshing token:', error)
-      MySwal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: 'Token Expired',
-      })
-      navigate('/')
+      addToast("Token expired", 'danger', 'error')
+      navigate('/login')
+      // window.location.assign('https://twiis-toyota.web.app/#/login')
     }
   }
 
@@ -64,12 +58,8 @@ const useVerify = () => {
           setImgProfile(decoded.img)
         } catch (error) {
           console.error('Error refreshing token in interceptor:', error)
-          MySwal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: 'Token Expired',
-          })
-          navigate('/')
+          navigate('/login')
+        //  window.location.assign('https://twiis-toyota.web.app/#/login')
         }
       } else {
         config.headers.Authorization = `Bearer ${token}`

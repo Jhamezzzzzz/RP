@@ -8,6 +8,7 @@ import {
   CDropdownItem,
   CDropdownMenu,
   CDropdownToggle,
+  CHeaderNav,
   CHeader,
   CCol,
   CHeaderToggler,
@@ -25,11 +26,14 @@ import {
   cilMoon,
   cilSun,
 } from '@coreui/icons'
+import useVerify from '../hooks/useVerify2'
+import * as icon from "@coreui/icons";
+
 
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
-
+  const { name, roleName, imgProfile } = useVerify()
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
   const today = new Date()
@@ -68,6 +72,30 @@ const AppHeader = () => {
             {formattedDate}
           </span>
         </CCol>
+        <div className="nav-item py-0 d-flex align-items-center" style={{ textDecoration: 'none', display: '' }}>
+          <div className="vr h-100 mx-2 text-body text-opacity-100"></div>
+        </div>
+        <CHeaderNav>
+          <CNavItem className="d-flex align-items-center">
+            <CNavLink style={{ textDecoration: 'none' }}>
+              <div
+                className="d-flex align-items-center justify-content-center"
+                style={{
+                  border: '1px solid black',
+                  height: '30px',
+                  width: '30px',
+                  borderRadius: '100%',
+                }}
+              >
+                { imgProfile ? <CImage src={imgProfile}/> : <CIcon icon={icon.cilUser} />}
+              </div>
+            </CNavLink>
+            <CNavLink className="d-flex flex-column justify-content-center h-100" style={{ textDecoration: 'none' }}>
+              <span style={{ fontSize: '', marginTop: '0px'}}>{name}</span>
+              <span style={{ fontSize: '10px', marginTop: '0px' }}>{roleName?.toUpperCase()}</span>
+            </CNavLink>
+          </CNavItem>
+        </CHeaderNav>
       </CContainer>
     </CHeader>
   )

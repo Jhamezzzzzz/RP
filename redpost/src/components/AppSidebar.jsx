@@ -10,6 +10,7 @@ import {
   CSidebarToggler,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
+import useNav from '../_nav'
 
 import { AppSidebarNav } from './AppSidebarNav'
 
@@ -17,12 +18,12 @@ import logo from 'src/assets/images/TWIIS-NEW.png'
 import sygnet from 'src/assets/images/RedIcon.png'
 
 // sidebar nav config
-import navigation from '../_nav'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
+  const _nav = useNav()
 
   return (
     <CSidebar
@@ -50,7 +51,7 @@ const AppSidebar = () => {
           onClick={() => dispatch({ type: 'set', sidebarShow: false })}
         />
       </CSidebarHeader>
-      <AppSidebarNav items={navigation} />
+      <AppSidebarNav items={_nav} />
       <CSidebarFooter className="border-top d-none d-lg-flex">
         <CSidebarToggler
           onClick={() => dispatch({ type: 'set', sidebarUnfoldable: !unfoldable })}
