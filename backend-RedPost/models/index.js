@@ -1,10 +1,10 @@
-import db from "./utils/Database.js";
+import db from "../utils/Database.js";
 
 // master berdiri sendiri
-import Pic from "./models/PicModel.js";
-import Shift from "./models/ShiftModel.js";
-import StockData from "./models/StockDataModel.js";
-import InputRedPost from "./models/InputModel.js";
+import Pic from "./PicModel.js";
+import Shift from "./ShiftModel.js";
+import StockData from "./StockDataModel.js";
+import InputRedPost from "./InputModel.js";
 
 
 
