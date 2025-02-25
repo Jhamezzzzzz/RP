@@ -6,6 +6,13 @@ export const getInputRedPost = async (req, res) => {
   try {
     const response = await InputRedPost.findAll({
       where: { flag: 1 },
+      include:[
+        {
+          model: StockData,
+          required: false,
+          attributes: ['soh']
+        }
+      ]
     });
 
     res.status(200).json(response);
