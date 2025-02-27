@@ -253,16 +253,24 @@ useEffect(() => {
         beginAtZero: true,
         title: {
             display: true,
-            text: "Material No",
+            text: "Description",
             font: {
                 size: 10
             }
         },
         ticks: {
-            font: {
-                size: 8 // Ukuran font label di sumbu X lebih kecil
-            }
-        }
+          font: {
+            size: 9, // Ukuran font label di sumbu X lebih kecil
+          },
+          callback: function (value, index, ticks) {
+            const item = shiftGraph.labels[index]; // Ambil data berdasarkan index
+        
+            if (!item || typeof item !== "string") return ""; // Pastikan item valid
+        
+            const descSubstring = item.length > 19 ? item.substring(0, 18) + "..." : item; // Batasi panjang
+            return descSubstring.split(" "); // Wrap text jika ada spasi
+          },
+        },
     }, 
       y: {
         beginAtZero: true,
@@ -624,13 +632,14 @@ useEffect(() => {
 
   const blinkStyle = {
     color: "red",
-    animation: "blink 8s infinite"
+    animation: "blink 4s infinite"
   };
 
 
   return (
     <>
-      <CCard className="mb-2">
+      <CCard className="mb-2"
+      style={{borderBlockColor: "red",borderBlockWidth: "thick",borderBlockStyle: "solid"}}>
         <CCardBody>
           <CRow >
             <CCol sm={9}>
@@ -750,18 +759,19 @@ useEffect(() => {
                   
                 </CRow>
               <CCol xs={12}>
-                <hr/>
+                {/* <hr/>
               <CRow>
                 <div className="mt-3">
-                  <h6>Material Data Table</h6>
+                  <h6>Summary Status</h6>
                   <CTable striped bordered responsive style={{ fontSize: '0.80rem' }}>
                     {' '}
-                    {/* Ukuran font lebih kecil */}
+                    Ukuran font lebih kecil
                     <CTableHead>
                       <CTableRow>
                         <CTableHeaderCell>Material No</CTableHeaderCell>
                         <CTableHeaderCell>MRP</CTableHeaderCell>
                         <CTableHeaderCell>Description</CTableHeaderCell>
+                        <CTableHeaderCell>SOH</CTableHeaderCell>
                         <CTableHeaderCell>SOH</CTableHeaderCell>
                       </CTableRow>
                     </CTableHead>
@@ -771,12 +781,13 @@ useEffect(() => {
                           <CTableDataCell>{item.MaterialNo}</CTableDataCell>
                           <CTableDataCell>{item.Mrp}</CTableDataCell>
                           <CTableDataCell>{item.Description}</CTableDataCell>
-                          <CTableDataCell> {item.StockDatum?.soh}   </CTableDataCell>
+                          <CTableDataCell> {item.StockDatum?.soh}</CTableDataCell>
+                          <CTableDataCell> {item.StockDatum?.soh}</CTableDataCell>
                         </CTableRow>
                       ))}
                     </CTableBody>
                   </CTable>
-                  {/* Pagination */}
+                  Pagination
                   <CPagination size="sm" align="center" className="mt-3">
                     <CPaginationItem
                       disabled={currentPage === 1}
@@ -801,7 +812,7 @@ useEffect(() => {
                     </CPaginationItem>
                   </CPagination>
                 </div>
-              </CRow>
+              </CRow> */}
             </CCol>
         </CCardBody>
       </CCard>

@@ -125,4 +125,79 @@ export const deleteInputRedPost = async (req, res) => {
   }
 };
 
+export const uploadInputData = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send({ message: "Please upload an Excel file!" });
+  }
+
+  let mainTransaction;
+
+  try {
+    const buffer = req.file.buffer;
+    const workbook = new Excel.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const worksheet = workbook.getWorksheet(1); // Ambil sheet pertama
+    const rows = [];
+    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      if (rowNumber >= 1) { // Data dimulai dari baris pertama (ubah jika header dihilangkan)
+        rows.push(row.values);
+      }
+    });
+
+    console.log(`Total rows: ${rows.length}`);
+    if (rows.length > 5000) {
+      return res.status(400).send({ message: "Batch size exceeds the limit! Max 5000 rows data." });
+    }
+
+    mainTransaction = await db.transaction();
+
+    const inputData = [];
+    
+    for (const row of rows) {
+      const materialNo = row[1];
+      if (
+        !row[0] || !row[1] || !row[2] || !row[3] || !row[4] || !row[5] || !row[6] 
+        || !row[7] || !row[8] || !row[9] 
+      ) {
+        throw new Error(`Invalid data in row with Material No: ${materialNo}`);
+      }
+
+      inputData.push({
+        InputDate: row[0],
+        MaterialNo: row[1],
+        Description: row[2],
+        Address: row[3],
+        Mrp: row[4],
+        CardNo: row[5],
+        QtyReq: row[6],
+        Pic: row[7],
+        Soh: row[8],
+        ShiftId: row[9],
+      });
+
+      if (inputData.length === BATCH_SIZE) {
+        await StockData.bulkCreate(inputData, { transaction: mainTransaction });
+        inputData.length = 0; // Reset array setelah batch disimpan
+      }
+    }
+
+    if (inputData.length > 0) {
+      await StockData.bulkCreate(inputData, { transaction: mainTransaction });
+    }
+
+    await mainTransaction.commit();
+
+    res.status(200).send({
+      message: `Uploaded the file successfully: ${req.file.originalname}`,
+    });
+  } catch (error) {
+    if (mainTransaction) await mainTransaction.rollback();
+
+    console.error("File processing error:", error);
+    res.status(500).send({
+      message: `Could not process the file: ${req.file?.originalname}. ${error.message}`,
+    });
+  }
+};
 

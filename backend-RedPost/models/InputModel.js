@@ -39,6 +39,14 @@ const InputRedPost = db.define(
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      Pic: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      Soh: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
     
     flag: {
       type: DataTypes.INTEGER,

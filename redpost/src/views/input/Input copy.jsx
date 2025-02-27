@@ -1,15 +1,9 @@
 import React, { useState, useEffect, useRef,useCallback, Suspense,useMemo } from 'react'
 import { FilterMatchMode } from 'primereact/api'
-import '../../scss/_tabels.scss'
 import { IconField } from 'primereact/iconfield'
 import { InputIcon } from 'primereact/inputicon'
 import { InputText } from 'primereact/inputtext'
-
 import * as XLSX from "xlsx";
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Tag } from 'primereact/tag';
-import Swal from 'sweetalert2';
 import {
   CCard,
   CCardHeader,
@@ -38,6 +32,7 @@ import {
   CModalFooter,
   CSpinner,
 } from '@coreui/react'
+import Swal from 'sweetalert2'
 import { Button } from 'primereact/button'
 import withReactContent from 'sweetalert2-react-content'
 import Select from 'react-select'
@@ -56,12 +51,6 @@ import useStockDataService from '../../services/StockDataService'
 import useVerify from '../../hooks/useVerify2.jsx'
 import { AbortedDeferredError } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
-import { FaPencilAlt,FaTrash } from "react-icons/fa"; // ✅ Benar
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircle, faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
-
-
-
 
 const MySwal = withReactContent(Swal)
 
@@ -108,11 +97,7 @@ const InputInventory = () => {
   const [loading, setLoading] = useState(false);
   const [qtyReq, setQtyReq] = useState(null); // Track the value of the input field
   const [qtyReqEdit, setQtyReqEdit] = useState(0); // Untuk update (handleEditClick)
-  const [sortField, setSortField] = useState(null);
-    const [sortOrder, setSortOrder] = useState(null);
-    const [editingRows, setEditingRows] = useState(null);
-   
-
+  
    const apiWbs = 'wbs-public'
     const apiGic = 'gic-public'
   
@@ -236,15 +221,6 @@ console.log("Selected Pic Value:", selectedPic);
   useEffect(() => {
     fetchShiftData();
   }, []);
-  useEffect(() => {
-    if (name === "Shift Red WH") {
-      setSelectedShift({ value: 1, label: "Red" });
-    } else if (name === "Shift Putih WH") {
-      setSelectedShift({ value: 2, label: "White" });
-    } else {
-      setSelectedShift(null);
-    }
-  }, [name]);
   
 
 
@@ -330,97 +306,69 @@ console.log("Selected Pic Value:", selectedPic);
   console.log("Updated Items:", items);
 }, [items]); // Ini memastikan kita melihat perubahan pada items
   //materials untu MaterialNo
+  
+  const handleDelete = async (id) => {
+    try {
+      await deleteInputById(id); // Delete the entry by id
+      const updatedData = await getInput(); // Refresh data after deletion
+      setItems(updatedData.data); // Update state with the new data
+    } catch (error) {
+      console.error('Error deleting item:', error);
+    }
+  };
+  //Sortby Table
+  
+
+  //qty Change untuk add/input
+  const handleQtyChange = (e) => {
+    const value = e.target.value; // Extract the value from the event
+    setQtyRec(value); // Set the value as state
+  };
+  console.log("stockId",stockId);
+  console.log("QtyRec",qtyRec);
+
+  //tombol Search
   const renderHeader = () => {
     return (
-      <div className="d-flex align-items-center">
+      <div>
         <IconField iconPosition="left">
           <InputIcon className="pi pi-search" />
           <InputText
             value={globalFilterValue}
             onChange={onGlobalFilterChange}
             placeholder="Keyword Search"
-            style={{ width: '250px', borderRadius: '5px', paddingRight: '30px' }}
+            style={{ width: '100%', borderRadius: '5px' }}
           />
         </IconField>
-  
-        {globalFilterValue && (
-          <button 
-            onClick={clearSearch} 
-            style={{ 
-              marginLeft: '-30px', 
-              border: 'none', 
-              background: 'transparent', 
-              cursor: 'pointer', 
-              fontSize: '16px', 
-              color: '#888' 
-            }}
-          >
-            ❌
-          </button>
-        )}
       </div>
-    );
-  };
+    )
+  }
   const onGlobalFilterChange = (e) => {
-    const value = e.target.value.toLowerCase();
-    setGlobalFilterValue(value);
-  
-    if (value === "") {
-      // Jika input kosong, tampilkan kembali semua data
-      fetchData();
-    } else {
-      // Filter hanya berdasarkan 'MaterialNo' dan 'Description'
-      const filtered = items.filter((item) =>
-        item.MaterialNo.toLowerCase().includes(value) || 
-        item.Description.toLowerCase().includes(value)
-      );
-      setItems(filtered);
-    }
-  };
-  
-  // Fungsi untuk menghapus pencarian
-  const clearSearch = () => {
-    setGlobalFilterValue(""); 
-    fetchData(); // Ambil ulang semua data
-  };
-  
-  
-const handleDelete = async (id) => {
-  Swal.fire({
-    title: 'Apakah Anda yakin?',
-    text: 'Data yang dihapus tidak dapat dikembalikan!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Ya, hapus!',
-    cancelButtonText: 'Batal'
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        await deleteInputById(id); // Hapus data berdasarkan ID
-        const updatedData = await getInput(); // Ambil data terbaru setelah penghapusan
-        setItems(updatedData.data); // Perbarui state
+    const value = e.target.value
+    setFilters({
+      ...filters,
+      global: { value },
+    })
+    setGlobalFilterValue(value)
+  }
+  const showModalUpload = () => {
+    setModalUpload(true)
+  }
 
-        Swal.fire(
-          'Terhapus!',
-          'Data berhasil dihapus.',
-          'success'
-        );
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        Swal.fire(
-          'Gagal!',
-          'Terjadi kesalahan saat menghapus data.',
-          'error'
-        );
-      }
-    }
-  });
-};
-
- 
-  
+  const handleDateChange = (selectedDate) => {
+    setDate(selectedDate[0])
+    setUploadData((prevData) => ({
+      ...prevData,
+      importDate: selectedDate[0],
+    }))
+  }
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    setUploadData((prevData) => ({
+      ...prevData,
+      file: file,
+    }))
+  }
 
   const exportExcel = () => {
     import("xlsx").then((xlsx) => {
@@ -548,7 +496,31 @@ const handleDelete = async (id) => {
   
 
   // Enable the input field for editing
- 
+  const handleEditClick = (itemId, qtyReqValue) => {
+    setIsEditable(itemId); // Set the item to be editable
+    setQtyReq(qtyReqValue); // Set the initial value for the input field
+  };
+
+  // Handle the Enter key press to confirm changes
+  const handleKeyPress = async (e, itemId) => {
+    if (e.key === 'Enter') {
+      setIsEditable(null); // Menonaktifkan mode edit
+  
+      try {
+        const updatedItem = { QtyReq: Number(qtyReqEdit) || 0 }; // Pastikan tidak null
+  
+        console.log("Updating item with ID:", itemId); // Debugging
+  
+        if (itemId) {
+          await updateInput(Number(itemId), updatedItem); // Pastikan itemId dikonversi ke angka
+        } else {
+          await postInput(updatedItem);
+        }
+      } catch (error) {
+        console.error('Error updating or adding data:', error);
+      }
+    }
+  };
   
   // Sort items to show newest first
   const sortedItems = useMemo(() => {
@@ -559,113 +531,9 @@ const handleDelete = async (id) => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = sortedItems.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(items.length / itemsPerPage);
+
+
   
-  const onSort = (e) => {
-    setSortField(e.sortField);
-    setSortOrder(e.sortOrder);
-};
-
-const onRowEditComplete = async (e) => {
-  let { newData, index } = e;
-  let updatedData = [...data];
-  updatedData[index] = newData;
-  try {
-      if (newData.id) {
-          await updateInput(Number(newData.id), { QtyReq: Number(newData.QtyReq) || 0 });
-      } else {
-          await postInput({ QtyReq: Number(newData.QtyReq) || 0 });
-      }
-  } catch (error) {
-      console.error('Error updating or adding data:', error);
-  }
-};
-
-
-
-
-const mrpBodyTemplate = (rowData) => {
-    return rowData.Mrp === 'NQC' ? <Tag severity="danger" value={rowData.Mrp} /> : rowData.Mrp;
-};
-
-const actionBodyTemplate = (rowData) => {
-    return (
-<Button 
-  className="p-button-danger p-button-text" 
-  onClick={() => handleDelete(rowData.id)}
->
-  <FaTrash size={14} color="red" />
-</Button>
-
-    );
-};
-
-
-const handleEditClick = (itemId, qtyReqValue) => {
-  setIsEditable(itemId); // Set the item to be editable
-  setQtyReq(qtyReqValue); // Set the initial value for the input field
-};
-
-const handleQtyChange = (e) => {
-  const value = e.target.value; // Extract the value from the event
-  setQtyRec(value); // Set the value as state
-};
-console.log("stockId",stockId);
-console.log("QtyRec",qtyRec);
-
-const handleKeyPress = async (e, itemId) => {
-  if (e.key === 'Enter') {
-    setIsEditable(null); // Menonaktifkan mode edit
-
-    try {
-      const updatedItem = { QtyReq: Number(qtyReqEdit) || 0 }; // Pastikan tidak null
-
-      console.log("Updating item with ID:", itemId); // Debugging
-
-      if (itemId) {
-        await updateInput(Number(itemId), updatedItem); // Pastikan itemId dikonversi ke angka
-      } else {
-        await postInput(updatedItem);
-      }
-    } catch (error) {
-      console.error('Error updating or adding data:', error);
-    }
-  }
-};
-
-const actionBodyTemplateRec = (rowData) => {
-  return (
-      <div style={{ display: "flex", alignItems: "center" }}>
-          {isEditable === rowData.id ? (
-              <InputText 
-                  type="number"
-                  value={qtyRec}
-                  onChange={(e) => handleQtyChange(e, rowData.id)}
-                  onKeyDown={(e) => handleKeyPress(e, rowData.id)}
-                  style={{ width: "80px", marginRight: "5px" }}
-                  autoFocus
-              />
-          ) : (
-              <div 
-                  style={{
-                      padding: "5px 10px", 
-                      border: "1px solid #ccc", 
-                      borderRadius: "4px", 
-                      backgroundColor: "#fff", 
-                      minWidth: "80px", 
-                      textAlign: "center"
-                  }}
-              >
-                  <span>{rowData.QtyReq}</span>
-              </div>
-          )}
-          <FaPencilAlt 
-              style={{ color: "gray", cursor: "pointer", marginLeft: "5px" }} 
-              onClick={() => handleEditClick(rowData.id, rowData.QtyReq)}
-          />
-      </div>
-  );
-};
-
 
   return (
     <CRow>
@@ -764,26 +632,22 @@ const actionBodyTemplateRec = (rowData) => {
                   <CRow>
                   <CCol xs={12} sm={2} md={2} xl={2}  className="mt-1">
                         <label style={{ fontSize: '13px' }}>Card No</label>
-                        <div className="d-flex gap-3 align-items-center mt-2">
-                          <CFormCheck
-                            type="radio"
-                            id="payment1"
-                            label="WBS"
-                            checked={isWbs}
-                            onChange={() => setIsWbs(true)}
-                            disabled={!selectedMaterialNo} // Perbaikan: Gunakan `disabled`
-                          />
-                          <CFormCheck
-                            type="radio"
-                            id="payment2"
-                            label="GIC"
-                            checked={!isWbs}
-                            onChange={() => setIsWbs(false)}
-                            disabled={!selectedMaterialNo} // Perbaikan: Gunakan `disabled`
-                          />
-                        </div>
+                        <CFormCheck
+                          type="radio"
+                          id="payment1"
+                          label="WBS"
+                          checked={isWbs} // Properly bind to isWbs
+                          onChange={() => setIsWbs(true)} // Set state to WBS
+                        />
+                        <CFormCheck
+                          type="radio"
+                          id="payment2"
+                          label="GIC"
+                          checked={!isWbs} // Check if GIC is selected
+                          onChange={() => setIsWbs(false)} // Set state to GIC
+                        />
                       </CCol>
-                      <CCol xs={12} sm={10} md={4} xl={4}  className="mt-1">
+                      <CCol xs={12} sm={10} md={4} xl={3}  className="mt-1">
                        <CFormLabel htmlFor="cardNo" style={{ fontSize: '13px' }}>
                          ID Card
                        </CFormLabel>
@@ -801,7 +665,22 @@ const actionBodyTemplateRec = (rowData) => {
                          />
                        </CInputGroup>
                      </CCol>
-                     <CCol xs={12} sm={6} md={2} xl={2}  className="mt-1">
+                     <CCol xs={12} sm={6} md={3} xl={4}  className="mt-1">
+                    <CFormLabel htmlFor="pic" style={{ fontSize: '13px' }}>
+                      PIC
+                    </CFormLabel>
+                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                      <CFormInput
+                        className="basic-single"
+                        placeholder="PIC"
+                        id="pic"
+                        value={name}
+                        styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
+                        disabled
+                      />
+                    </CInputGroup>
+                  </CCol>
+                  <CCol xs={12} sm={6} md={3} xl={3}  className="mt-1">
                     <CFormLabel htmlFor="shift" style={{ fontSize: '13px' }}>
                       Shift
                     </CFormLabel>
@@ -819,24 +698,9 @@ const actionBodyTemplateRec = (rowData) => {
                       />
                     </CInputGroup>
                   </CCol>
-                     <CCol xs={12} sm={6} md={3} xl={4}  className="mt-1">
-                    <CFormLabel htmlFor="pic" style={{ fontSize: '13px' }}>
-                      PIC
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                      <CFormInput
-                        className="basic-single"
-                        placeholder="PIC"
-                        id="pic"
-                        value={name}
-                        styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
-                        disabled
-                      />
-                    </CInputGroup>
-                  </CCol>
                   </CRow>  
                 <CRow>
-                  <CCol xs={12} sm={6} md={2} xl={2} className="mt-1">
+                  <CCol xs={12} sm={6} md={3} xl={3} className="mt-1">
                     <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
                     {`Quantity Input (${baseUom})`}
                     </CFormLabel>
@@ -848,10 +712,9 @@ const actionBodyTemplateRec = (rowData) => {
                       required
                       inputMode="numeric"
                       value={qtyRec}
-                      onChange={handleQtyChange} 
+                      onChange={handleQtyChange} // Attach the change handler
                       autoComplete="off"
-                      disabled={!selectedMaterialNo}
-                      min="0" // Mencegah angka negatif
+                      disabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
                     />
                   </CCol>
                   <CCol xs={12} sm={5} md={3} xl={2} className="mt-1">
@@ -920,62 +783,168 @@ const actionBodyTemplateRec = (rowData) => {
                     overflowX: 'auto', // Membuat tabel bisa digeser horizontal
                   }}
                 >
-                   <DataTable 
-                      value={items} 
-                      sortField={sortField} 
-                      sortOrder={sortOrder} 
-                      onSort={onSort} 
-                      paginator rows={10} 
-                      filters={filters} 
-                      globalFilterFields={['date', 'pic', 'shift', 'materialNo', 'description']}
-                      editable onRowEditComplete={onRowEditComplete}
-                      editingRows={editingRows} onEditingRowsChange={setEditingRows}
-                      className="custom-table dashboard"
-                      scrollable scrollHeight="500px"
-                      // style={{ fontSize: '12px' }} // Tambahkan inline style
+                  <CTable
+                    bordered
+                    striped
+                    responsive
+                    style={{
+                      fontSize: '14px', // Mengurangi ukuran font
+                    }}
                   >
-                      <Column field="InputDate" header="Date" sortable />
-                      <Column field="Pic" header="PIC" sortable />
-                      <Column 
-                          field="ShiftId" 
-                          header="Shift" 
-                          sortable 
-                          body={(rowData) => (
-                            <span>
-                              {shiftOptions.find(shift => shift.value === rowData.ShiftId)?.label || ""}
-                            </span>
-                          )} 
-                        />
-                      <Column field="MaterialNo" header="Material No" sortable />
-                      <Column field="Description" header="Description" sortable />
-                      <Column field="Address" header="Address" />
-                      <Column field="Mrp" header="MRP Type" body={mrpBodyTemplate} sortable />
-                      <Column field="CardNo" header="Card No" sortable />
-                      <Column body={actionBodyTemplateRec} field="QtyReq" header="Qty Rec"  />
-                      <Column 
-                        field="Soh" 
-                        header="SOH" 
-                        sortable 
-                        body={(rowData) => (
-                          <div style={{ textAlign: 'center', fontWeight: 'bold', color: 'red' }}>
-                            {rowData.Soh}
-                          </div>
-                        )}
-                      />
-                   <Column 
-                        field="Status" 
-                        header="Status"  
-                        body={(rowData) => (
-                          rowData.Soh > 0 ? (
-                            <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: 'orange', fontSize: '1.2rem' }} title="Not IWMS" />
-                          ) : (
-                            <FontAwesomeIcon icon={faCircle} style={{ color: 'green', fontSize: '1.2rem' }} title="OK" />
-                          )
-                        )}
-                        sortable
-                      />
-                        <Column body={actionBodyTemplate} header="Action" frozen align="center" style={{ minWidth: '80px' }} />
-                  </DataTable>
+                    <CTableHead color="dark">
+                      <CTableRow>
+                        <CTableHeaderCell
+                          scope="col"
+                          onClick={() => handleSort('date')}
+                        >
+                          Date{' '}
+                          {sortConfig.key === 'date' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell
+                          scope="col"
+                          onClick={() => handleSort('pic')}
+                        >
+                          PIC{' '}
+                          {sortConfig.key === 'pic' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('shift')}>
+                          Shift{' '}
+                          {sortConfig.key === 'shift' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('materialNo')} >
+                          Material No{' '}
+                          {sortConfig.key === 'materialNo' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('description')} >
+                          Description{' '}
+                          {sortConfig.key === 'description' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col">Address</CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('mrpType')}>
+                          MRP Type{' '}
+                          {sortConfig.key === 'mrpType' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('qtyROP')}>
+                          Card No
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('qtyRec')}>
+                          Qty Rec{' '}
+                          {sortConfig.key === 'qtyRec' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell scope="col" onClick={() => handleSort('soh')}   style={{ color: 'red' }} >
+                          SOH{' '}
+                          {sortConfig.key === 'soh' && (
+                            <CIcon
+                              icon={sortConfig.direction === 'asc' ? cilArrowTop : cilArrowBottom}
+                            />
+                          )}
+                        </CTableHeaderCell>
+                        <CTableHeaderCell
+                          scope="col"
+                          style={{ position: 'sticky', right: 0, zIndex: 1 }}
+                        >
+                          Action
+                        </CTableHeaderCell>
+                      </CTableRow>
+                    </CTableHead>
+                    <CTableBody>
+                      {currentItems.map((item) => (
+                        <CTableRow key={item.id}>
+                          <CTableDataCell className="align-middle"> {item.InputDate}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.Pic}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{shiftOptions.find(shift => shift.value === item.ShiftId)?.label || ""}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.MaterialNo}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.Description}</CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.Address}</CTableDataCell>
+                          <CTableDataCell 
+                          className={`align-middle ${item.Mrp === 'NQC' ? 'bg-danger text-white' : ''}`}>{
+                            item.Mrp}
+                          </CTableDataCell>
+                          <CTableDataCell className="align-middle">{item.CardNo}</CTableDataCell>
+                          <CTableDataCell>
+                            <div className="d-flex align-items-center">
+                              {/* Conditionally render either the input or the label */}
+                              {isEditable === item.id ? (
+                                <CFormInput
+                                  type="number"
+                                  value={qtyReq}
+                                  onChange={(e) => handleQtyChange(e, item.id)} // Pass itemId here
+                                  onKeyDown={(e) => handleKeyPress(e, item.id)} // Listen for Enter key press
+                                  className="form-control-sm text-center align-middle"
+                                  style={{ width: "65px" }}
+                                  autoFocus // Automatically focus on the input field
+                                />
+                              ) : (
+                                <div 
+                                  className="d-flex align-items-center" 
+                                  style={{
+                                    padding: "5px 10px", 
+                                    border: "1px solid #ccc", 
+                                    borderRadius: "4px", 
+                                    backgroundColor: "#fff", 
+                                    minWidth: "65px", 
+                                    textAlign: "center"
+                                  }}
+                                >
+                                  <span>{item.QtyReq}</span> {/* Display current value if not in edit mode */}
+                                </div>
+                              )}
+                                    <CIcon
+                                      className="ms-2"
+                                      icon={cilPencil}
+                                      size="sm"
+                                      style={{ fontSize: "10px", cursor: "pointer", color: "black" }}
+                                      onClick={() => handleEditClick(item.id, item.QtyReq)} // Trigger edit mode for specific item
+                                    />
+                                  </div>
+                          </CTableDataCell>
+                          <CTableDataCell className="align-middle"> 
+                              {item.Soh}
+                            </CTableDataCell>
+
+                          <CTableDataCell
+                            style={{ position: 'sticky', right: 0 }}
+                             className="text-center align-middle"
+                          >
+                            <CIcon
+                              icon={cilTrash}
+                              size="md"
+                              style={{ fontSize: '20px', cursor: 'pointer', color: 'red' }}
+                              onClick={() => handleDelete(item.id)}
+                            />
+                          </CTableDataCell>
+                        </CTableRow>
+                      ))}
+                    </CTableBody>
+                  </CTable>
                   <div className="d-flex justify-content-center align-items-center mt-3">
                     <CButton disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
                       Previous
