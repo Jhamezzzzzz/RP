@@ -146,8 +146,8 @@ export const uploadInputData = async (req, res) => {
     });
 
     console.log(`Total rows: ${rows.length}`);
-    if (rows.length > 5000) {
-      return res.status(400).send({ message: "Batch size exceeds the limit! Max 5000 rows data." });
+    if (rows.length > 10000) {
+      return res.status(400).send({ message: "Batch size exceeds the limit! Max 10000 rows data." });
     }
 
     mainTransaction = await db.transaction();
