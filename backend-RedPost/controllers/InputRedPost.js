@@ -2,7 +2,7 @@ import db from "../utils/Database.js";
 import InputRedPost from "../models/InputModel.js";
 import Excel from "exceljs";
 import StockData from "../models/StockDataModel.js";
-// import Shift from "../models/ShiftModel.js";  
+import Shift from "../models/ShiftModel.js";  
 
 const BATCH_SIZE = 1000; // Sesuaikan dengan kebutuhan
 //ini RedPost
@@ -143,13 +143,14 @@ export const uploadInputData = async (req, res) => {
 
     const worksheet = workbook.getWorksheet(1); // Ambil sheet pertama
     const rows = [];
+    
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      if (rowNumber >= 0) { // Data dimulai dari baris pertama (ubah jika header dihilangkan)
+      if (rowNumber > 1) { // Lewati baris pertama jika itu header
         rows.push(row.values);
       }
     });
 
-    console.log(`Total rows: ${rows.length}`);
+    console.log(`Total rows to process: ${rows.length}`);
     if (rows.length > 10000) {
       return res.status(400).send({ message: "Batch size exceeds the limit! Max 10000 rows data." });
     }
@@ -157,37 +158,51 @@ export const uploadInputData = async (req, res) => {
     mainTransaction = await db.transaction();
 
     const inputData = [];
-    
+
     for (const row of rows) {
-      const materialNo = row[1];
-      if (
-        !row[0] || !row[1] || !row[2] || !row[3] || !row[4] || !row[5] || !row[6] 
-        || !row[7] || !row[8] || !row[9] 
-      ) {
-        throw new Error(`Invalid data in row with Material No: ${materialNo}`);
+      // Ambil data dari Excel berdasarkan urutan kolom
+      const InputDate = row[1]; 
+      const MaterialNo = row[2];
+      const Pic = row[3];
+      const ShiftName = row[4]; // Nama shift dari Excel
+      const Description = row[5];
+      const Address = row[6];
+      const Mrp = row[7];
+      const CardNo = row[8];
+      const QtyReq = row[9] || 0; // Default 0 jika kosong
+      const Soh = row[10] || 0; // Default 0 jika kosong
+
+      if (!InputDate || !MaterialNo || !Pic || !ShiftName || !Description || !Address || !Mrp || !CardNo) {
+        console.warn(`Skipping row with missing required data: ${JSON.stringify(row)}`);
+        continue; // Lewati baris jika ada data yang kosong
       }
 
+      // Cari ShiftId berdasarkan ShiftName
+      const shift = await Shift.findOne({ where: { name: ShiftName } });
+      const ShiftId = shift ? shift.id : null;
+
       inputData.push({
-        InputDate: row[0],
-        MaterialNo: row[1],
-        Description: row[2],
-        Address: row[3],
-        Mrp: row[4],
-        CardNo: row[5],
-        QtyReq: row[6],
-        Pic: row[7],
-        Soh: row[8],
-        ShiftId: row[9],
+        InputDate,
+        MaterialNo,
+        Description,
+        Address,
+        Mrp,
+        CardNo,
+        QtyReq,
+        Pic,
+        Soh,
+        ShiftId,
+        flag: 1, // Default flag
       });
 
       if (inputData.length === BATCH_SIZE) {
-        await StockData.bulkCreate(inputData, { transaction: mainTransaction });
+        await InputRedPost.bulkCreate(inputData, { transaction: mainTransaction });
         inputData.length = 0; // Reset array setelah batch disimpan
       }
     }
 
     if (inputData.length > 0) {
-      await StockData.bulkCreate(inputData, { transaction: mainTransaction });
+      await InputRedPost.bulkCreate(inputData, { transaction: mainTransaction });
     }
 
     await mainTransaction.commit();
