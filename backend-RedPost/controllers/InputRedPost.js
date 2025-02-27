@@ -1,6 +1,10 @@
+import db from "../utils/Database.js";
 import InputRedPost from "../models/InputModel.js";
+import Excel from "exceljs";
 import StockData from "../models/StockDataModel.js";
+// import Shift from "../models/ShiftModel.js";  
 
+const BATCH_SIZE = 1000; // Sesuaikan dengan kebutuhan
 //ini RedPost
 export const getInputRedPost = async (req, res) => {
   try {
@@ -140,7 +144,7 @@ export const uploadInputData = async (req, res) => {
     const worksheet = workbook.getWorksheet(1); // Ambil sheet pertama
     const rows = [];
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      if (rowNumber >= 1) { // Data dimulai dari baris pertama (ubah jika header dihilangkan)
+      if (rowNumber >= 0) { // Data dimulai dari baris pertama (ubah jika header dihilangkan)
         rows.push(row.values);
       }
     });
