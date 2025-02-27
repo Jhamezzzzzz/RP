@@ -116,6 +116,19 @@ const useInputService = () => {
       handleError(error, 'Error fetching inventory:')
     }
   }
+
+  const getMasterData = async (api) => {
+    try {
+      const response = await axiosJWT.get(`/${api}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      return response
+    } catch (error) {
+      handleError(error, 'Error fetching:')
+    }
+  }
   return {
     getInput,
     getInputById,
@@ -124,7 +137,8 @@ const useInputService = () => {
     deleteInputById,
     getMaterial,
     getGic,
-    getWbs
+    getWbs,
+    getMasterData
   }
 }
 

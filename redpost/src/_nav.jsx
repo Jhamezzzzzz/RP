@@ -53,12 +53,12 @@ const useNav = () => {
       items: [
         {
           component: CNavItem,
-          name: 'Input',
+          name: 'Input By Material',
           to: '/input',
         },
         {
           component: CNavItem,
-          name: 'Data Morning',
+          name: 'Data SoH',
           to: '/datamorn',
         },
       ],

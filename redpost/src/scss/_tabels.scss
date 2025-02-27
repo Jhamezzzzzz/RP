@@ -1,0 +1,54 @@
+/* Garis di antara header dan tabel */
+.custom-table {
+  border: 1px solid #e0e0e0; /* Garis luar hitam, tidak terlalu tebal */
+  border-collapse: collapse;
+  font-size: 11px; /* Sesuaikan ukuran teks sesuai kebutuhan */
+}
+
+/* Garis antar header */
+.custom-table thead tr th {
+  border-bottom: 1px solid #e0e0e0 !important; /* Garis tipis antar header */
+  padding: 2px; /* Jarak dalam sel */
+}
+
+.custom-table thead tr th + th {
+  border-left: 1px solid #e0e0e0; /* Garis tipis antar header secara vertikal */
+}
+
+.custom-table thead tr th:first-child {
+  border-left: none; /* Hapus garis kiri header pertama */
+}
+
+.custom-table thead tr th:last-child {
+  border-right: none; /* Hapus garis kanan header terakhir */
+}
+
+/* Garis luar lebih tegas tetapi tidak terlalu tebal */
+.custom-table thead tr th,
+.custom-table tbody tr td {
+  border: 1px solid #e0e0e0; /* Garis lebih hitam untuk tampilan lebih jelas */
+  font-size: 12px; /* Pastikan semua teks dalam header dan isi tabel lebih kecil */
+}
+
+/* Baris tabel dengan striping */
+.custom-table tbody tr {
+  border-bottom: 1px solid #d3d3d3 !important; /* Garis horizontal antar baris */
+}
+
+.custom-table tbody tr td {
+  padding: 6px; /* Jarak dalam sel */
+  border-right: 1px solid #d3d3d3; /* Garis vertikal antar kolom */
+}
+
+.custom-table tbody tr td:last-child {
+  border-right: none; /* Hapus garis pada kolom terakhir */
+}
+
+/* Warna striping pada baris */
+.custom-table tbody tr:nth-child(odd) {
+  background-color: #f9f9f9; /* Warna latar belakang abu-abu muda untuk baris ganjil */
+}
+
+.custom-table tbody tr:nth-child(even) {
+  background-color: #ffffff; /* Warna putih untuk baris genap */
+}
