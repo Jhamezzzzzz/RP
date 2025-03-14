@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import db from "../utils/Database.js";
+import Shift from "./ShiftModel.js";  
 
 
 const { DataTypes } = Sequelize;
@@ -13,7 +14,7 @@ const Pic = db.define(
     },
     flag: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: false,  
       defaultValue: 1,
     },
   },
@@ -21,4 +22,6 @@ const Pic = db.define(
     freezeTableName: true,
   }
 );
+Shift.hasMany(Pic, { foreignKey: "ShiftId" });
+Pic.belongsTo(Shift, { foreignKey: "ShiftId" });
 export default Pic;

@@ -17,27 +17,19 @@ export const getCardData = async (req, res) => {
     // Total RedPost dalam range tanggal
     const totalRedPost = await InputRedPost.count({
       where: {
-        createdAt: {
-          [Op.between]: [startDate, endDate], // ? Filter berdasarkan rentang tanggal
-        },
+        InputDate: {  [Op.between]: [startDate, endDate] },
         flag: 1, // ? Hanya data dengan flag 
       },
     });
 
     // Total SOH (distinct MaterialNo dari InputRedPost yang join ke StockData)
     const totalSoh = await InputRedPost.count({
-      include: [
-        {
-          model: StockData,
-          attributes: [],
-          required: true, // Inner join dengan StockData
-          where: { soh: { [Op.gt]: 0 } }, // Filter soh > 0
-        },
-      ],
+      distinct: true, // ✅ Pastikan hanya menghitung unique MaterialNo
+      col: 'MaterialNo', // ✅ Hitung MaterialNo yang unik
+     
       where: {
-        createdAt: {
-          [Op.between]: [startDate, endDate], // ? Filter berdasarkan rentang tanggal
-        },
+        InputDate: {  [Op.between]: [startDate, endDate] },
+         Soh: { [Op.gt]: 0 }, // ✅ Filter berdasarkan InputDate
         flag: 1, // ? Hanya data dengan flag 
       },
     });
@@ -72,14 +64,14 @@ export const getCombinationGraph = async (req, res) => {
     // ?? Total InputRedPost berdasarkan MaterialNo dalam rentang tanggal
     const inputRedPostCounts = await InputRedPost.findAll({
       attributes: [
-        'MaterialNo',
+        'Description',
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'redPostCount']
       ],
       where: {
-        createdAt: { [Op.between]: [startDate, endDate] },
+        InputDate: {  [Op.between]: [startDate, endDate] },
         flag: 1, // ? Hanya data dengan flag // ? Rentang tanggal
       },
-      group: ['MaterialNo']
+      group: ['Description']
     });
 
     res.status(200).json({ stockData, inputRedPostCounts });
@@ -96,14 +88,15 @@ export const getLineGraph = async (req, res) => {
   try {
     const data = await InputRedPost.findAll({
       attributes: [
-        [Sequelize.literal("CONVERT(DATE, createdAt)"), 'date'], // ?? Tetap gunakan CONVERT(DATE)
+        'InputDate', // ✅ Gunakan InputDate untuk pengelompokan
         [Sequelize.fn('COUNT', Sequelize.col('MaterialNo')), 'materialCount'],
       ],
       where: {
-        createdAt: { [Op.between]: [startDate, endDate] },
-        flag: 1, // ? Hanya data dengan flag  // ? Gunakan Op.between untuk range
+        InputDate: { [Op.between]: [startDate, endDate] }, // ✅ Filter berdasarkan InputDate
+        flag: 1, // ? Hanya data dengan flag
       },
-      group: [Sequelize.literal("CONVERT(DATE, createdAt)")]
+      group: ['InputDate'], // ✅ Grouping berdasarkan InputDate
+      order: [['InputDate', 'ASC']], // 🔹 Urutkan berdasarkan tanggal ASC
     });
 
     res.status(200).json(data);
@@ -115,6 +108,7 @@ export const getLineGraph = async (req, res) => {
 };
 
 
+
 export const getDoughnutChart = async (req, res) => {
   const { startDate, endDate } = req.query;
   try {
@@ -124,9 +118,7 @@ export const getDoughnutChart = async (req, res) => {
         [Sequelize.fn('COUNT', Sequelize.col('ShiftId')), 'count'],
       ],
       where: {
-        createdAt: {
-          [Sequelize.Op.between]: [startDate, endDate], // Filter berdasarkan range tanggal
-        },
+        InputDate: { [Op.between]: [startDate, endDate] }, // ✅ Filter berdasarkan InputDate
         flag: 1, // ? Hanya data dengan flag 
       },
       group: ['ShiftId'],

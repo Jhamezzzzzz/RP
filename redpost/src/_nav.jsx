@@ -4,13 +4,16 @@ import * as icon from '@coreui/icons'
 import {
   cilBarChart,
   cilClipboard,
-  cilAccountLogout
+  cilAccountLogout,
+  cilPhone,
+  cilColumns
 } from '@coreui/icons'
 import Swal from 'sweetalert2'
 import withReactContent from 'sweetalert2-react-content'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 import useAuthDataService from './services/AuthDataServices'
 import { useNavigate } from 'react-router-dom'
+
 
 const useNav = () => {
   const { logout } = useAuthDataService();
@@ -40,10 +43,18 @@ const useNav = () => {
 
   const _nav = [
     {
+      component: CNavTitle,
+      name: 'Dashboard',
+    },
+    {
       component: CNavItem,
       name: 'Dashboard',
       to: '/dashboard',
       icon: <CIcon icon={cilBarChart} customClassName="nav-icon" />,
+    },
+    {
+      component: CNavTitle,
+      name: 'Red-Post',
     },
     {
       component: CNavGroup,
@@ -58,11 +69,34 @@ const useNav = () => {
         },
         {
           component: CNavItem,
-          name: 'Data SoH',
-          to: '/datamorn',
+          name: 'Follow Up-SoH',
+          to: '/follow-soh',
+          
         },
+       
       ],
     },
+    {
+      component: CNavTitle,
+      name: 'Defisit',
+    },
+    {
+      component: CNavItem,
+      name: 'Follow Up-Defisit',
+      to: '/input-defisit',
+      icon: <CIcon icon={icon.cilBookmark} customClassName="nav-icon" />,
+    },
+    {
+      component: CNavTitle,
+      name: 'Upload SoH',
+    },
+    {
+      component: CNavItem,
+      name: 'Data SoH',
+      to: '/datamorn',
+      icon: <CIcon icon={icon.cilColumns} customClassName="nav-icon" />
+    },
+   
     {
       component: CNavTitle,
       name: 'USER',

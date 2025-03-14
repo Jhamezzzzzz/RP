@@ -29,6 +29,9 @@ import {
   CForm,
   CFormCheck,
   CTable,
+  CToast, 
+  CToastBody, 
+  CToastClose,
   CInputGroup,
   CInputGroupText,
   CModal,
@@ -50,7 +53,7 @@ import Flatpickr from 'react-flatpickr'
 import 'primereact/resources/themes/nano/theme.css'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
-import useInputService from '../../services/InputDataService'
+import useInputDefService from '../../services/InputDefisitService'
 import usePicService from '../../services/PicService'
 import useShiftService from '../../services/ShiftService'
 import useStockDataService from '../../services/StockDataService'
@@ -59,8 +62,9 @@ import { AbortedDeferredError } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { FaPencilAlt,FaTrash,FaCheck } from "react-icons/fa"; // ? Benar
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircle, faExclamationTriangle,faPencilAlt,faCheck,faPaperPlane } from "@fortawesome/free-solid-svg-icons";
+import { faCircle, faExclamationTriangle,faPencilAlt,faCircleCheck,faTimesCircle,faCheck,faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { MultiSelect } from 'primereact/multiselect';
+import { useToast } from "../../App";
 
 const MySwal = withReactContent(Swal)
 
@@ -95,7 +99,7 @@ const [editingRemark, setEditingRemark] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [qtyRec, setQtyRec] = useState(null);
   const [stockId, setStockId] = useState(null);
-  const {getInput,getInputById,postInput,updateInput,deleteInputById,getMaterial,getGic,getWbs,getMasterData,uploadInputData } = useInputService()
+  const { getInputDefisit, getInputDefisitById, postInputDefisit, updateInputDefisit, deleteInputById, getMaterial, getGic, getWbs, getMasterData,uploadInputData } = useInputDefService()
   const { getStockData, uploadStockData,getSohData } = useStockDataService()
   const [stockData, setStockData] = useState([]);
   const [sohData, setSohData] = useState();
@@ -121,6 +125,8 @@ const [orderDate, setOrderDate] = useState(null);
 const [isEditing, setIsEditing] = useState(false);
 const [ visibleColumns, setVisibleColumns ] = useState([]);
 const [editingDateId, setEditingDateId] = useState(null);
+const [toastVisible, setToastVisible] = useState(false);
+const addToast = useToast();
 const { name, roleName, imgProfile } = useVerify()
   
     const apiSection = 'section-public'
@@ -208,8 +214,8 @@ const { name, roleName, imgProfile } = useVerify()
     //   )
     // }
     {
-      field: "Remark",
-      header: "Remark",
+      field: "GI No",
+      header: "NoGI",
       body: (rowData) => (
         <div 
           style={{ 
@@ -237,12 +243,12 @@ const { name, roleName, imgProfile } = useVerify()
               background: "transparent" 
             }} 
           />
-          <button 
-            onClick={() => handleSubmitRemark(rowData)}
-            style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
-          >
-            <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
-          </button>
+           <button 
+              onClick={() => handleSubmitRemark(rowData)}
+              style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
+            >
+              <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
+            </button>
           </>
       ) : (
         <span 
@@ -268,7 +274,7 @@ const { name, roleName, imgProfile } = useVerify()
       const fetchData = async () => {
         try {
           
-          const response = await getInput(); // Fetch data on mount
+          const response = await getInputDefisit(); // Fetch data on mount
           
           setItems(response.data); // Assuming the response contains data
         } catch (error) {
@@ -299,30 +305,30 @@ const { name, roleName, imgProfile } = useVerify()
   
     // Fungsi untuk mendapatkan data stok berdasarkan material yang dipilih
     
-    const fetchStockData = async () => {
-      setLoading(true);
-      try {
-        const response = await getStockData();
-        setStockData(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
-        console.error("Error fetching StockData:", error);
-        setStockData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // const fetchStockData = async () => {
+    //   setLoading(true);
+    //   try {
+    //     const response = await getStockData();
+    //     setStockData(Array.isArray(response.data) ? response.data : []);
+    //   } catch (error) {
+    //     console.error("Error fetching StockData:", error);
+    //     setStockData([]);
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
   
     useEffect(() => {
       getInventories();
     }, []);
 
-    useEffect(() => {
-      if (selectedMaterialNo) {
-        fetchStockData(selectedMaterialNo);
-      } else {
-        setStockData([]); // Reset stockData jika tidak ada Material No yang dipilih
-      }
-    }, [selectedMaterialNo]);
+    // useEffect(() => {
+    //   if (selectedMaterialNo) {
+    //     fetchStockData(selectedMaterialNo);
+    //   } else {
+    //     setStockData([]); // Reset stockData jika tidak ada Material No yang dipilih
+    //   }
+    // }, [selectedMaterialNo]);
 
     const fetchCardData = useCallback(async () => {
       setIsLoading(true);
@@ -400,28 +406,25 @@ useEffect(() => {
 
 
   
-  const fetchSohData = async (materialNo) => {
-    setLoading(true);
-    try {
-      const response = await getSohData(materialNo);
+  // const fetchSohData = async (materialNo) => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await getSohData(materialNo);
 
-      setSohData(response.data.soh);
-      setStockId(response.data.id);
-    } catch (error) {
-      console.error("Error fetching StockData:", error);
-      setSohData();
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setSohData(response.data.soh);
+  //     setStockId(response.data.id);
+  //   } catch (error) {
+  //     console.error("Error fetching StockData:", error);
+  //     setSohData();
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
 
   const handleAdd = async () => {
       // Check if stockId is set before proceeding
-    if (!stockId) {
-      console.error("stockId is null or undefined");
-      return; // Exit early if stockId is not available
-    }
+ 
     // Menyiapkan data yang akan dikirim ke API
     const timeZone = 'Asia/Jakarta';
     // Get the current date in WIB (Asia/Jakarta)
@@ -435,24 +438,21 @@ useEffect(() => {
       Address: selectedAddress?.label, // Material No yang dipilih
       Mrp: selectedMrp?.label,
       CardNo: selectedCard?.label, // Description yang dipilih
+      Uom:baseUom,
       QtyReq: qtyRec, // Card No yang dipilih
+      DefPic: "",
+      Section: selectedSection,
+      NoGI: "", // Remark awal kosong
+      OrderDate: null,
       ShiftId: selectedShift?.value, // Quantity yang dimasukkan
       PicId : selectedPic?.value,
-      Soh : sohData,
-      Section: selectedSection,
-      StockDataId:stockId,
-      Uom:baseUom,
-      OrderPic: "",
-      Remark: "", // Remark awal kosong
-      SohEdit : "",
-      OrderDate: null,
+
     };
-    
     // Memulai loading saat proses request
     setIsLoading(true);
   
     try {
-      const response = await postInput(data); // Mengirim data ke API
+      const response = await postInputDefisit(data); // Mengirim data ke API
       if (response) {
         // Menambahkan item baru ke state items
         setItems((prevItems) => [response.data, ...prevItems]); // ?? Tambahkan item ke paling atas
@@ -558,7 +558,7 @@ const handleDelete = async (id) => {
     if (result.isConfirmed) {
       try {
         await deleteInputById(id); // Hapus data berdasarkan ID
-        const updatedData = await getInput(); // Ambil data terbaru setelah penghapusan
+        const updatedData = await getInputDefisit(); // Ambil data terbaru setelah penghapusan
         setItems(updatedData.data); // Perbarui state
 
         Swal.fire(
@@ -601,10 +601,9 @@ const exportExcel = () => {
       CardNo: item.CardNo || "",
       Section: item.Section || "",
       QtyRec: item.QtyReq || 0,
-      SOH: item.StockDatum?.soh ?? 0, // Gunakan `??` untuk nilai default
       OrderDate: item.OrderDate || "",
-      OrderPic: item.OrderPic || "",
-      Remark: item.Remark || "",
+      DefPic: item.DefPic || "",
+      NoGI: item.NoGI || "",
     }));
 
     // ✅ Buat worksheet dari data yang telah dimapping
@@ -624,7 +623,7 @@ const exportExcel = () => {
     });
 
     // ✅ Simpan file Excel
-    saveAsExcelFile(excelBuffer, `Data_Red_Post_${formattedDate}`);
+    saveAsExcelFile(excelBuffer, `Data_Defisit_${formattedDate}`);
   });
 };
 
@@ -654,7 +653,7 @@ const saveAsExcelFile = (buffer, fileName) => {
           label: selectedItem.Address_Rack.addressRackName,
         })
         fetchPic(selectedItem.Material.materialNo)
-        fetchSohData(selectedItem.Material.materialNo)
+        // fetchSohData(selectedItem.Material.materialNo)
         setBaseUom(selectedItem.Material.uom)
       }
     } else {
@@ -732,9 +731,9 @@ const onRowEditComplete = async (e) => {
   updatedData[index] = newData;
   try {
       if (newData.id) {
-          await updateInput(Number(newData.id), { QtyReq: Number(newData.QtyReq) || 0 });
+          await updateInputDefisit(Number(newData.id), { QtyReq: Number(newData.QtyReq) || 0 });
       } else {
-          await postInput({ QtyReq: Number(newData.QtyReq) || 0 });
+          await postInputDefisit({ QtyReq: Number(newData.QtyReq) || 0 });
       }
   } catch (error) {
       console.error('Error updating or adding data:', error);
@@ -787,9 +786,9 @@ const handleSubmitQty = async (itemId) => {
     const updatedItem = { QtyReq: Number(qtyRecValues[itemId]) || 0 };
 
     if (itemId) {
-      await updateInput(Number(itemId), updatedItem);
+      await updateInputDefisit(Number(itemId), updatedItem);
     } else {
-      await postInput(updatedItem);
+      await postInputDefisit(updatedItem);
     }
 
     // Perbarui nilai di tabel setelah berhasil update
@@ -857,47 +856,47 @@ const actionBodyTemplateRec = (rowData) => {
   );
 };
 
-const handleUpload = async () => {
-  if (!uploadData.file) {
-    MySwal.fire('Error', 'Please select a file to upload.', 'error')
-    return
-  }
+// const handleUpload = async () => {
+//   if (!uploadData.file) {
+//     MySwal.fire('Error', 'Please select a file to upload.', 'error')
+//     return
+//   }
 
-  setLoadingImport(true)
+//   setLoadingImport(true)
 
-  // Buat FormData kosong
-  const formData = new FormData()
-  formData.append('file', uploadData.file) // Tambahkan file
-  formData.append('importDate', uploadData.importDate) // Tambahkan tanggal impor
+//   // Buat FormData kosong
+//   const formData = new FormData()
+//   formData.append('file', uploadData.file) // Tambahkan file
+//   formData.append('importDate', uploadData.importDate) // Tambahkan tanggal impor
 
-  try {
-    await uploadInputData(formData) // Panggil API untuk upload data
-    MySwal.fire('Success', 'File uploaded successfully.', 'success')
-    setModalUpload(false)
-    fetchStockData() // Refresh data setelah upload berhasil
-  } catch (error) {
-    console.error('Failed to upload file:', error)
-  } finally {
-    setLoadingImport(false) // Hentikan animasi loading
-  }
-}
-const showModalUpload = () => {
-  setModalUpload(true)
-}
-const handleDateChange = (selectedDate) => {
-  setDate(selectedDate[0])
-  setUploadData((prevData) => ({
-    ...prevData,
-    importDate: selectedDate[0],
-  }))
-}
-const handleFileChange = (e) => {
-  const file = e.target.files[0]
-  setUploadData((prevData) => ({
-    ...prevData,
-    file: file,
-  }))
-}
+//   try {
+//     await uploadInputData(formData) // Panggil API untuk upload data
+//     MySwal.fire('Success', 'File uploaded successfully.', 'success')
+//     setModalUpload(false)
+//     fetchStockData() // Refresh data setelah upload berhasil
+//   } catch (error) {
+//     console.error('Failed to upload file:', error)
+//   } finally {
+//     setLoadingImport(false) // Hentikan animasi loading
+//   }
+// }
+// const showModalUpload = () => {
+//   setModalUpload(true)
+// }
+// const handleDateChange = (selectedDate) => {
+//   setDate(selectedDate[0])
+//   setUploadData((prevData) => ({
+//     ...prevData,
+//     importDate: selectedDate[0],
+//   }))
+// }
+// const handleFileChange = (e) => {
+//   const file = e.target.files[0]
+//   setUploadData((prevData) => ({
+//     ...prevData,
+//     file: file,
+//   }))
+// }
 
 const handleRemarkChange = (id, value) => {
   setItems((prevItems) =>
@@ -959,66 +958,42 @@ const handlePicChange = (selected) => {
 };
 
 
-  const handleDateOrder = (value, rowData) => {
-    const updatedData = { 
-      ...rowData, 
-      OrderDate: value, 
-      PICOrder: name // Set PIC Order sesuai user yang mengedit
-    };
-
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === rowData.id ? updatedData : item
-      )
-    );
-
-  setEditingDateId(rowData.id); // Tandai bahwa item ini sedang diedit
+const handleDateOrder = (date, rowData) => {
+  setItems((prevItems) =>
+    prevItems.map((item) =>
+      item.id === rowData.id 
+        ? { ...item, OrderDate: date, DefPic: name } // Saat OrderDate diisi, DefPic otomatis terisi
+        : item
+    )
+  );
 };
+
 
 const handleSubmitDateOrder = async (rowData) => {
   if (!rowData.OrderDate) return; // Pastikan OrderDate tidak kosong
 
   const updatedData = { 
     ...rowData, 
-    OrderDate: rowData.OrderDate // Hanya update Order Date
+    OrderDate: rowData.OrderDate,
+    DefPic: name // Pastikan DefPic juga dikirim
   };
 
   try {
-    await updateInput(rowData.id, updatedData);
+    await updateInputDefisit(rowData.id, updatedData);
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === rowData.id 
-          ? { ...item, OrderDate: rowData.OrderDate } 
+          ? { ...item, OrderDate: rowData.OrderDate, DefPic: name } 
           : item
       )
     );
-
-    // Setelah Order Date diubah, update juga OrderPic
-    handleSubmitOrderPic(rowData); // Panggil fungsi terpisah untuk OrderPic
-
+     // Tampilkan toast
+     addToast("Success ,Updated Defisit Input", "success", "info");
   } catch (error) {
-    console.error("Error updating Order Date: ", error);
+    console.error("Error updating Order Date & Def PIC: ", error);
   }
 };
-const handleSubmitOrderPic = async (rowData) => {
-  const updatedData = { 
-    ...rowData, 
-    OrderPic: name // Update PIC Order dengan nama pengguna yang sedang login
-  };
 
-  try {
-    await updateInput(rowData.id, updatedData);
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === rowData.id 
-          ? { ...item, OrderPic: name } 
-          : item
-      )
-    );
-  } catch (error) {
-    console.error("Error updating PIC Order: ", error);
-  }
-};
 
 
 
@@ -1042,18 +1017,13 @@ const header = () => (
   />
 )
 
-
-
-
-
   return (
     <CRow>
       <CCol>
         {isFormVisible && (
           <CCard>
-           <CCardHeader className="fw-bold fs-6 fst-italic">
-            Form Input <span style={{ color: "red" }}>Red Post</span>
-          </CCardHeader>
+           <CCardHeader className="fw-bold fs-6 fst-italic"
+           >Form Input <span style={{ color: "orange" }}>Defisit</span></CCardHeader>
             <CForm>
               <CCardBody>
                 <CRow className="mt-1">
@@ -1270,9 +1240,9 @@ const header = () => (
                   </CCol>
                   </CRow>  
                 <CRow>
-                  <CCol xs={12} sm={6} md={2} xl={2} className="mt-1">
+                  <CCol xs={12} sm={6} md={3} xl={2} className="mt-1">
                     <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
-                    {`Quantity Input (${baseUom})`}
+                    {`Quantity Good Issue (${baseUom})`}
                     </CFormLabel>
                     <CFormInput
                       type="number"
@@ -1288,7 +1258,7 @@ const header = () => (
                       min="0" // Mencegah angka negatif
                     />
                   </CCol>
-                  <CCol xs={12} sm={5} md={3} xl={2} className="mt-1">
+                  {/* <CCol xs={12} sm={5} md={3} xl={2} className="mt-1">
                       <CFormLabel htmlFor="soh" style={{ fontSize: "13px" }}>
                         {` SOH  (${baseUom})`}
                       </CFormLabel>
@@ -1305,7 +1275,7 @@ const header = () => (
                       value={sohData}
                       disabled={true} // DISABLED jika Material No belum dipili
                     />
-                    </CCol>
+                    </CCol> */}
                   <CCol
                     xs={12} sm={6} md={3} xl={3}
                     className="d-flex justify-content-start align-items-center mt-1"
@@ -1319,7 +1289,7 @@ const header = () => (
           </CCard>
         )}
         <CCard className="mt-3">
-          <CCardHeader className="fw-bold fs-6 fst-italic" >Tabel Red Post</CCardHeader>
+          <CCardHeader className="fw-bold fs-6 fst-italic">Tabel Defisit</CCardHeader>
           <CForm>
             <CCardBody>
               <CRow>
@@ -1342,7 +1312,7 @@ const header = () => (
                       onClick={exportExcel}
                       data-pr-tooltip="XLS"
                     />
-                     <Button
+                     {/* <Button
                       type="button"
                       label="Upload"
                       icon="pi pi-file-import"
@@ -1350,7 +1320,7 @@ const header = () => (
                       className="rounded-5 me-2 mb-2"
                       onClick={showModalUpload}
                       data-pr-tooltip="XLS"
-                    />
+                    /> */}
                   </div>
                 </CCol>
                 <CCol xs={6} sm={6} md={4} lg={3} xl={2} >
@@ -1451,9 +1421,9 @@ const header = () => (
                       />
                       <Column body={actionBodyTemplateRec} 
                       field="QtyReq" 
-                      header="Qty Req"
+                      header="Qty GI"
                         />
-                    <Column 
+                    {/* <Column 
                       field="Soh" 
                       header="Stock Act" 
                       body={() => (
@@ -1461,46 +1431,26 @@ const header = () => (
                           0
                         </div>
                       )}
-                    />
-                 <Column 
-                  field="OrderDate" 
-                  header="Plan Delivery"
-                  body={(rowData) => (
-                    <div 
-                      style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        background: "white", 
-                        padding: "5px", 
-                        borderRadius: "4px",
-                        justifyContent: "space-between",
-                        width: "110px"
-                      }}
-                    >
-                     <input
-                      type="date"
-                      value={rowData.OrderDate || ""}
-                      onChange={(e) => handleDateOrder(e.target.value, rowData)}
-                      onFocus={() => setEditingDateId(rowData.id)} // Set editingDateId saat input diklik
-                      onBlur={() => setTimeout(() => setEditingDateId(null), 200)} // Hilangkan editingDateId setelah selesai edit
-                      placeholder="Silakan isi"
-                      style={{ flexGrow: 1, border: "none", outline: "none" }}
-                      disabled={!(roleName === "group head" || roleName === "super admin")} // Hanya bisa edit jika role sesuai
-                    />
-                      {editingDateId === rowData.id && (roleName === "group head" || roleName === "super admin") && (
-                        <button 
-                          onClick={() => handleSubmitDateOrder(rowData)}
-                          style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px" }}
-                        >
-                          <FontAwesomeIcon icon={faCheck} style={{ color: "green" }} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                />
+                    /> */}
+                    <Column 
+                        field="OrderDate" 
+                        header="GI Input"
+                        body={(rowData) => (
+                          <input
+                            type="date"
+                            value={rowData.OrderDate || ""}
+                            onChange={(e) => handleDateOrder(e.target.value, rowData)}
+                            onFocus={() => setEditingDateId(rowData.id)}
+                            onBlur={() => setTimeout(() => setEditingDateId(null), 200)}
+                            placeholder="Silakan isi"
+                            style={{ flexGrow: 1, border: "none", outline: "none" }}
+                            disabled={!(roleName === "group head" || roleName === "super admin")}
+                          />
+                        )}
+                      />
                 <Column 
-                  field="OrderPic" 
-                  header="PIC Order"
+                  field="DefPic" 
+                  header="PIC GI"
                   body={(rowData) => (
                     <div 
                       style={{ 
@@ -1510,7 +1460,7 @@ const header = () => (
                         textAlign: "center"
                       }}
                     >
-                      {rowData.OrderPic || "-"} 
+                      {rowData.DefPic || "-"} 
                     </div>
                   )}
                 />
@@ -1548,9 +1498,44 @@ const header = () => (
                   )}
                   sortable
                 /> */}
+             <Column 
+              header="Action"
+              body={(rowData) => {
+                const isDisabled = !rowData.OrderDate || !rowData.DefPic; // Cek apakah OrderDate & DefPic sudah diisi
+
+                return (
+                  <button 
+                    onClick={() => !isDisabled && handleSubmitDateOrder(rowData)} // Hanya bisa diklik jika tidak disabled
+                    style={{ 
+                      background: "none", 
+                      border: "none", 
+                      cursor: isDisabled ? "not-allowed" : "pointer" // Ubah cursor sesuai status
+                        }}
+                        disabled={isDisabled} // Nonaktifkan tombol jika belum lengkap
+                      >
+                        <FontAwesomeIcon 
+                          icon={faCheck} 
+                          style={{ color: isDisabled ? "gray" : "green" }} // Warna abu-abu jika belum lengkap
+                        />
+                      </button>
+                      );
+                    }}
+                  />
+                  <Column 
+                  header="Status"
+                  body={(rowData) => {
+                    const isCompleted = rowData.OrderDate && rowData.DefPic; // Cek apakah OrderDate & DefPic sudah diisi
+                    return (
+                      <FontAwesomeIcon 
+                        icon={isCompleted ? faCircleCheck : faTimesCircle} 
+                        style={{ color: isCompleted ? "green" : "red", fontSize: "18px" }} 
+                      />
+                    );
+                  }}
+                />
                  <Column 
                     body={actionBodyTemplate} 
-                    header="Action" 
+                    header="Delete" 
                     frozen alignFrozen="right"
                     align="center" 
                     style={{ minWidth: '60px' }} 
@@ -1559,7 +1544,7 @@ const header = () => (
                   </DataTable>
                 </div>
               </CRow>
-                <CModal visible={modalUpload} onClose={() => setModalUpload(false)}>
+                {/* <CModal visible={modalUpload} onClose={() => setModalUpload(false)}>
                   <CModalHeader>
                     <CModalTitle id="LiveDemoExampleLabel">Upload Master Material</CModalTitle>
                   </CModalHeader>
@@ -1625,7 +1610,7 @@ const header = () => (
                       Close
                     </CButton>
                   </CModalFooter>
-                </CModal>
+                </CModal> */}
             </CCardBody>
           </CForm>
         </CCard>

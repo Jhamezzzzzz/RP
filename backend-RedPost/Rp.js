@@ -9,6 +9,7 @@ import "./models/index.js";
 import DashboardRouter from "./routes/DashboardRouter.js";
 import dataMasterRouter from "./routes/DataMasterRouter.js";
 import inputRedPost from "./routes/InputRedPost.js";
+import inputDefisit from "./routes/DefisitRoute.js";
 import stockData from "./routes/StockData.js";
 // import { verifyToken } from "./middleware/VerifyToken.js";
 
@@ -42,6 +43,7 @@ app.use(
     origin: [
       "http://localhost:3005",
       "https://redpost-warehouse.web.app",
+      "https://twiis-toyota.web.app"
     ],
   })
 );
@@ -55,6 +57,7 @@ app.use("/api", DashboardRouter);
 app.use("/api", dataMasterRouter);
 app.use("/api", inputRedPost);
 app.use("/api", stockData);
+app.use("/api", inputDefisit);
 
 
 

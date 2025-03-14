@@ -51,7 +51,7 @@ const DataStock = () => {
   })
   const { getStockData, uploadStockData } = useStockDataService()
   const [currentPage, setCurrentPage] = useState(1)
-
+  const [changeSearch, setChangeSearch] = useState('')
   const [totalItem, setTotalItem] = useState(0)
   const [stockData, setStockData] = useState([])
   const [totalPages, setTotalPages] = useState(0)
@@ -62,8 +62,8 @@ const DataStock = () => {
   })
 
   useEffect(() => {
-    fetchStockData(currentPage)
-  }, [currentPage])
+    fetchStockData(currentPage,changeSearch)
+  }, [currentPage,changeSearch])
 
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
@@ -97,9 +97,9 @@ const DataStock = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   )
-  const fetchStockData = async (page) => {
+  const fetchStockData = async (page,search) => {
     try {
-      const response = await getStockData(page)
+      const response = await getStockData(page,search)
       console.log('Response data:', response.data) // Debugging untuk memeriksa data
 
       // Ensure response.data.data is an array before setting it
@@ -190,8 +190,8 @@ const DataStock = () => {
         <IconField iconPosition="left">
           <InputIcon className="pi pi-search" />
           <InputText
-            value={globalFilterValue}
-            onChange={onGlobalFilterChange}
+            value={changeSearch}
+            onChange={handleChangeSearch}
             placeholder="Keyword Search"
             style={{ width: '100%', borderRadius: '5px' }}
           />
@@ -199,7 +199,9 @@ const DataStock = () => {
       </div>
     );
   };
- 
+  const handleChangeSearch = (e) => {
+    setChangeSearch(e.target.value)
+  }
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber)
   }
@@ -259,6 +261,9 @@ const DataStock = () => {
                     <CTableHeaderCell scope="col" style={{ width: '10%' }}>
                       UoM
                     </CTableHeaderCell>
+                    <CTableHeaderCell scope="col" style={{ width: '10%' }}>
+                      Last Upload
+                    </CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -269,6 +274,9 @@ const DataStock = () => {
                       <CTableDataCell>{item.addresRack}</CTableDataCell>
                       <CTableDataCell>{item.soh}</CTableDataCell>
                       <CTableDataCell>{item.uom}</CTableDataCell>
+                      <CTableDataCell>
+                        {new Date(item.createdAt).toISOString().replace('T', ' ').slice(0, 16)}
+                      </CTableDataCell>
                     </CTableRow>
                   ))}
                 </CTableBody>

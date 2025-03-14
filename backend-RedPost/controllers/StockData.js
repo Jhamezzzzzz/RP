@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import db from "../utils/Database.js";
 import StockData from "../models/StockDataModel.js";
 import readXlsxFile from "read-excel-file";
@@ -14,10 +15,16 @@ export const getStockData = async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = 1000; // Default 15 data per halaman
     const offset = (page - 1) * limit; // Hitung offset
-
+    const search = req.query.search;
+    
     // Ambil data dengan pagination
     const { count, rows } = await StockData.findAndCountAll({
-      where: { flag: 1 },
+      where: { 
+        [Op.or]: [
+          { materialNo: { [Op.like]: `%${search}%` } },
+          { description: { [Op.like]: `%${search}%` } },
+        ],
+        flag: 1 },
       offset,
       limit,
       order: [["id", "ASC"]], // Urutkan berdasarkan kolom "id" secara ascending

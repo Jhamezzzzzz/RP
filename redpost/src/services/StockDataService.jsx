@@ -13,9 +13,9 @@ const useStockDataService = () => {
     throw new Error(message + error.message)
   }
 
-  const getStockData = async ( page = 1) => {
+  const getStockData = async ( page = 1,search) => {
     try {
-      const response = await axiosAutoToken.get(`/stockData?page=${page}`)
+      const response = await axiosAutoToken.get(`/stockData?page=${page}&search=${search}`)
       return response // Return the response if successful
     } catch (error) {
       handleError(error, 'Error fetching StockData:') // Handle the error

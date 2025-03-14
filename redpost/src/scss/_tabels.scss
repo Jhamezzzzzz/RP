@@ -52,3 +52,41 @@
 .custom-table tbody tr:nth-child(even) {
   background-color: #ffffff; /* Warna putih untuk baris genap */
 }
+.custom-calendar .p-inputtext {
+  border-radius: 5px !important;
+  font-size: 13px !important; /* Ubah ukuran teks */
+  padding: 6px 5px; /* Sesuaikan padding agar tidak terlalu besar */
+  width: 210px; /* Lebar maksimum input */
+  // text-align: start !important; /* Pastikan teks rata kiri */
+}
+.calendar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.calendar-icon {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  cursor: pointer;
+}
+
+.blinking-text {
+  font-style: italic;
+  font-weight: bold;
+  color: red;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.selected-row {
+  background-color: #D3F1DF!important;
+}
+

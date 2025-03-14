@@ -1,6 +1,7 @@
 import db from "../utils/Database.js";
 import InputRedPost from "../models/InputModel.js";
 import Excel from "exceljs";
+import Pic from "../models/PicModel.js"
 import StockData from "../models/StockDataModel.js";
 import Shift from "../models/ShiftModel.js";  
 
@@ -10,13 +11,14 @@ export const getInputRedPost = async (req, res) => {
   try {
     const response = await InputRedPost.findAll({
       where: { flag: 1 },
-      include:[
+      include: [
         {
           model: StockData,
           required: false,
           attributes: ['soh']
         }
-      ]
+      ],
+      order: [['createdAt', 'DESC']] // Menambahkan sorting berdasarkan createdAt secara descending
     });
 
     res.status(200).json(response);
@@ -25,6 +27,7 @@ export const getInputRedPost = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export const getInputRedPostById = async (req, res) => {
   try {
@@ -130,23 +133,23 @@ export const deleteInputRedPost = async (req, res) => {
 };
 
 export const uploadInputData = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).send({ message: "Please upload an Excel file!" });
-  }
-
-  let mainTransaction;
+  let transaction;
 
   try {
+    if (!req.file) {
+      return res.status(400).send({ message: "Please upload an Excel file!" });
+    }
+
     const buffer = req.file.buffer;
     const workbook = new Excel.Workbook();
     await workbook.xlsx.load(buffer);
 
-    const worksheet = workbook.getWorksheet(1); // Ambil sheet pertama
+    const worksheet = workbook.getWorksheet(1);
     const rows = [];
-    
+
     worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-      if (rowNumber > 1) { // Lewati baris pertama jika itu header
-        rows.push(row.values);
+      if (rowNumber > 1) {
+        rows.push(row.values.slice(1));
       }
     });
 
@@ -155,68 +158,143 @@ export const uploadInputData = async (req, res) => {
       return res.status(400).send({ message: "Batch size exceeds the limit! Max 10000 rows data." });
     }
 
-    mainTransaction = await db.transaction();
+    transaction = await db.transaction(); // Start transaction
+    console.log("Transaction started");
 
     const inputData = [];
+    const validationErrors = [];
 
-    for (const row of rows) {
-      // Ambil data dari Excel berdasarkan urutan kolom
-      const InputDate = row[1]; 
-      const MaterialNo = row[2];
-      const Pic = row[3];
-      const ShiftName = row[4]; // Nama shift dari Excel
-      const Description = row[5];
-      const Address = row[6];
-      const Mrp = row[7];
-      const CardNo = row[8];
-      const QtyReq = row[9] || 0; // Default 0 jika kosong
-      const Soh = row[10] || 0; // Default 0 jika kosong
+    for (const [index, row] of rows.entries()) {
+      // Mapping kolom sesuai dengan Excel terbaru
+      const InputDate = new Date(row[0]);
+      const ShiftName = row[1] || null;
+      const MaterialNo = row[2] || null;
+      const Description = row[3] || null;
+      const PicName = row[4] || null;
+      const Address = row[5] || null;
+      const Mrp = row[6] || null;
+      const CardNo = String(row[7]) || null;
+      const Uom = row[8] || null;
+      const QtyReq = row[9] || 0;
+      const Soh = row[10] || 0;
+      const SohEditDate = row[11] ? new Date(row[11]) : null;
+      const PlanDelivery = row[12] || null;
+      const Remark = row[13] || null;
+      const flag = row[14] || 1;
+      const StockDataId = row[15] || null;
 
-      if (!InputDate || !MaterialNo || !Pic || !ShiftName || !Description || !Address || !Mrp || !CardNo) {
-        console.warn(`Skipping row with missing required data: ${JSON.stringify(row)}`);
-        continue; // Lewati baris jika ada data yang kosong
+      // Validasi Data
+      if (String(InputDate) === 'Invalid Date') {
+        validationErrors.push({ error: `Invalid Date on row ${index+1}` });
+        continue;
+      }
+      if (!MaterialNo) {
+        validationErrors.push({ error: `Invalid Material No on row ${index+1}` });
+        continue;
+      }
+      if (!PicName) {
+        validationErrors.push({ error: `Invalid PIC on row ${index+1}` });
+        continue;
+      }
+      if (!ShiftName) {
+        validationErrors.push({ error: `Invalid Shift Name on row ${index+1}` });
+        continue;
+      }
+      if (!Description) {
+        validationErrors.push({ error: `Invalid Description on row ${index+1}` });
+        continue;
+      }
+      if (!Address) {
+        validationErrors.push({ error: `Invalid Address on row ${index+1}` });
+        continue;
+      }
+      if (!Mrp) {
+        validationErrors.push({ error: `Invalid MRP on row ${index+1}` });
+        continue;
+      }
+      if (!CardNo) {
+        validationErrors.push({ error: `Invalid Card No on row ${index+1}` });
+        continue;
+      }
+      if (!QtyReq) {
+        validationErrors.push({ error: `Invalid QtyReq on row ${index+1}` });
+        continue;
+      }
+
+      const pic = await Pic.findOne({ where: { PicName } }); // Gunakan PicName yang berasal dari Excel
+      if (!pic) {
+        console.warn(`Skipping row because PicId is undefined: ${PicName}`);
+        validationErrors.push({ error: `PicId not found for PIC: ${PicName}` });
+        continue;
+      }
+
+      const shift = await Shift.findOne({ where: { ShiftName: ShiftName } });
+      if (!shift) {
+        console.warn(`Skipping row because ShiftId is undefined: ${ShiftName}`);
+        validationErrors.push({ error: `ShiftId not found for ShiftName: ${ShiftName}` });
+        continue;
       }
 
       // Cari ShiftId berdasarkan ShiftName
-      const shift = await Shift.findOne({ where: { name: ShiftName } });
       const ShiftId = shift ? shift.id : null;
+      const PicId = pic ? pic.id : null;
+      if (!PicId) {
+        validationErrors.push({ error: `Invalid PIC Name on row ${index + 1}: ${PicName}` });
+        continue;
+      }
 
       inputData.push({
-        InputDate,
+        InputDate: new Date(InputDate).toLocaleDateString('en-CA'),
         MaterialNo,
         Description,
         Address,
         Mrp,
         CardNo,
+        Uom,
         QtyReq,
-        Pic,
         Soh,
+        StockAct,
+        PlanDelivery,
+        OrderPic: null,
+        Remark,
+        Section,
+        OrderDate: new Date(OrderDate).toLocaleDateString('en-CA'),
+        SohEditDate: SohEditDate ? new Date(SohEditDate).toLocaleDateString('en-CA') : null,
+        SohEdit,
+        Remaining,
+        flag,
+        PicId,
         ShiftId,
-        flag: 1, // Default flag
+        StockDataId,
       });
-
-      if (inputData.length === BATCH_SIZE) {
-        await InputRedPost.bulkCreate(inputData, { transaction: mainTransaction });
-        inputData.length = 0; // Reset array setelah batch disimpan
-      }
     }
 
-    if (inputData.length > 0) {
-      await InputRedPost.bulkCreate(inputData, { transaction: mainTransaction });
-    }
+    console.log(`Creating ${inputData.length} data...`);
+    const responseBulk = await InputRedPost.bulkCreate(inputData, { transaction });
+    console.log("createdInputs:", responseBulk);
 
-    await mainTransaction.commit();
+    if (transaction) {
+      console.log("Committing transaction...");
+      await transaction.commit();
+      transaction = null; // Prevent rollback on success
+    }
 
     res.status(200).send({
       message: `Uploaded the file successfully: ${req.file.originalname}`,
+      errors: validationErrors.length > 0 ? validationErrors : "",
     });
   } catch (error) {
-    if (mainTransaction) await mainTransaction.rollback();
-
-    console.error("File processing error:", error);
+    console.error("Error:", error);
+    if (transaction) {
+      console.log("Rolling back transaction...");
+      await transaction.rollback();
+    } else {
+      console.log("No active transaction to rollback.");
+    }
     res.status(500).send({
       message: `Could not process the file: ${req.file?.originalname}. ${error.message}`,
     });
   }
 };
+
 

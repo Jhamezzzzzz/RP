@@ -31,6 +31,7 @@
     "@popperjs/core": "^2.11.8",
     "@primer/octicons-react": "^19.15.0",
     "@yudiel/react-qr-scanner": "^2.1.0",
+    "antd": "^5.24.2",
     "axios": "^1.7.9",
     "chart.js": "^4.4.7",
     "chartjs-plugin-datalabels": "^2.2.0",

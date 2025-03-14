@@ -58,7 +58,7 @@ const Login = () => {
 
     try {
       await login(username, password)
-      navigate('/home')
+      navigate('/dashboard')
     } catch (error) {
       if (error.response) {
         setMsg(error.response.data.msg)

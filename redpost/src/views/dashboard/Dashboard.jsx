@@ -144,7 +144,6 @@ const Dashboard = () => {
       datePickerRef.current.setFocus();
     }
   };
-  console.log("Updated Card Data:", cardData); // 🔍 Debug setelah set state
   const fetchCardData = async () => {
     try {
       const [startDate, endDate] = dateRange; // ✅ Ambil start & end dari array
@@ -155,7 +154,6 @@ const Dashboard = () => {
         console.error("Invalid API response:", data);
         return;
       }
-      console.log("Fetched Card Data:", data);
       setCardData(data);
     } catch (error) {
       console.error("Error fetching card data:", error);
@@ -185,10 +183,14 @@ useEffect(() => {
       }
   
       const { inputRedPostCounts } = response.data;
-  
+
+      const sortedData = inputRedPostCounts
+      .sort((a, b) => b.redPostCount - a.redPostCount) // Sort DESC
+      .slice(0, 10); // Ambil 10 data pertama
+
       // **Transform Data**
-      const labels = inputRedPostCounts.map((item) => item.MaterialNo);
-      const barData = inputRedPostCounts.map((item) => item.redPostCount);
+      const labels = sortedData.map((item) => item.Description);
+      const barData = sortedData.map((item) => item.redPostCount);
   
       // **Update State dengan Data Chart.js**
       setCombGraphData({
@@ -238,13 +240,17 @@ useEffect(() => {
       tooltip: {
         enabled: true,
       },
-      datalabels: { // Menampilkan label data di atas batang
-        color: "black", // Warna teks putih
-        anchor: "end", // Letakkan di atas
-        align: "bottom",
+
+      datalabels: {
+        color: '#000',
+        align: 'bottom',
+        anchor: 'end',
+        backgroundColor: 'white', // Menambahkan latar belakang putih
+        borderRadius: 3, // Membuat sudut lebih halus
+        padding: 1, // Memberikan sedikit ruang di sekitar teks
         font: {
-          weight: "bold",
-          size: 14,
+          size: 12,
+          weight: 'bold',
         },
       },
     },
@@ -252,26 +258,30 @@ useEffect(() => {
       x: {
         beginAtZero: true,
         title: {
-            display: true,
-            text: "Description",
-            font: {
-                size: 10
-            }
+          display: true,
+          text: "Description",
+          font: {
+            size: 10,
+          },
         },
         ticks: {
           font: {
             size: 9, // Ukuran font label di sumbu X lebih kecil
           },
           callback: function (value, index, ticks) {
-            const item = shiftGraph.labels[index]; // Ambil data berdasarkan index
-        
+            // Gunakan combGraphData.labels agar tetap bisa diakses
+            const item = combGraphData?.labels?.[index]; 
+            
             if (!item || typeof item !== "string") return ""; // Pastikan item valid
-        
-            const descSubstring = item.length > 19 ? item.substring(0, 18) + "..." : item; // Batasi panjang
-            return descSubstring.split(" "); // Wrap text jika ada spasi
+            
+            // Potong teks maksimal 17 karakter
+            const descSubstring = item.length > 17 ? item.substring(0, 17) + "..." : item;
+            
+            // Pisahkan berdasarkan spasi untuk membuat wrap text
+            return descSubstring.split(" ");
           },
         },
-    }, 
+      },    
       y: {
         beginAtZero: true,
         title: {
@@ -305,7 +315,7 @@ const fetchLineGraph = async () => {
     const { data } = response; // Sesuai dengan struktur response
 
     // **Transform Data**
-    const labels = data.map((item) => item.date);
+    const labels = data.map((item) => item.InputDate); // ✅ Ganti dari item.date ke item.Input
     const lineData = data.map((item) => item.materialCount);
 
     // **Update State dengan Data Chart.js**
@@ -322,6 +332,7 @@ const fetchLineGraph = async () => {
           fill: false,
           pointRadius: 5,
           pointHoverRadius: 7,
+          tension: 0.1
         },
       ],
     });
@@ -341,10 +352,10 @@ const lineChartOptions = {
   plugins: {
     legend: {
       position: "top", // Legend di bagian atas
-      align: "start", // Legend sejajar ke kiri
+      align: "end", // Legend sejajar ke kiri
       labels: {
         font: {
-          size: 12,
+          size: 7,
         },
       },
     },
@@ -355,11 +366,15 @@ const lineChartOptions = {
       color: '#000',
       align: 'top',
       anchor: 'center',
+      backgroundColor: 'white', // Menambahkan latar belakang putih
+      borderRadius: 3, // Membuat sudut lebih halus
+      padding: 1, // Memberikan sedikit ruang di sekitar teks
       font: {
         size: 12,
         weight: 'bold',
       },
     },
+    
   },
   scales: {
     x: {
@@ -368,6 +383,12 @@ const lineChartOptions = {
         text: 'Date', // Sesuaikan dengan data tanggal dari API
         font: {
           size: 10,
+        },
+      },
+      ticks: {
+        font: {
+          size: 8, // Ukuran font label di sumbu X lebih kecil
+          weight: "bold", // Buat bold
         },
       },
     },
@@ -394,7 +415,6 @@ const lineChartOptions = {
 };
 
 
-console.log("Updated Doughnut Data:", doughnutGraph); // 🔍 Debug setelah set state
 const fetchDoughnutGraph = async () => {
   try {
     if (!dateRange[0] || !dateRange[1]) return; // Pastikan tanggal terisi sebelum fetch data
@@ -402,7 +422,6 @@ const fetchDoughnutGraph = async () => {
     const formattedStartDate = format(new Date(dateRange[0]), "yyyy-MM-dd");
     const formattedEndDate = format(new Date(dateRange[1]), "yyyy-MM-dd");
 
-    console.log(`Fetching doughnut chart data from ${formattedStartDate} to ${formattedEndDate}`);
 
     const response = await getDoughnutGraph(formattedStartDate, formattedEndDate);
     
@@ -411,9 +430,6 @@ const fetchDoughnutGraph = async () => {
       console.error("Invalid API response:", response);
       return;
     }
-
-    console.log("Fetched Doughnut Chart Data:", response.data); // Debug hasil API
-
     // **Map data dengan label "Red" dan "White" sesuai ShiftId**
     const labels = ["Red", "White"];
     const data = [0, 0]; // Default jika tidak ada nilai
@@ -479,8 +495,6 @@ const doughnutOptions = {
   cutout: "50%", // Ukuran lubang tengah
 };
 
-
-console.log("Updated Shift Data:", shiftGraph); // 🔍 Debug setelah set state
 const fetchShiftGraph = async () => {
   try {
     if (!dateRange[0] || !dateRange[1]) return; // Pastikan tanggal dipilih sebelum fetch data
@@ -488,7 +502,6 @@ const fetchShiftGraph = async () => {
     const formattedStartDate = format(new Date(dateRange[0]), "yyyy-MM-dd");
     const formattedEndDate = format(new Date(dateRange[1]), "yyyy-MM-dd");
 
-    console.log(`Fetching shift graph data from ${formattedStartDate} to ${formattedEndDate}`);
 
     const response = await getShiftGraph(formattedStartDate, formattedEndDate);
 
@@ -496,8 +509,6 @@ const fetchShiftGraph = async () => {
       console.error("Invalid API response:", response);
       return;
     }
-
-    console.log("Fetched Shift Graph Data:", response.data); // Debug hasil API
 
     // **Transform Data**
     const materialMap = new Map();
@@ -642,7 +653,7 @@ useEffect(() => {
       style={{borderBlockColor: "red",borderBlockWidth: "thick",borderBlockStyle: "solid"}}>
         <CCardBody>
           <CRow >
-            <CCol sm={9}>
+            <CCol lg={9} sm={12} xs={12} >
             <div>
               <h3 id="traffic" className="card-title" style={blinkStyle}>
                 RED POST VISUALIZATION DASHBOARD
@@ -671,7 +682,7 @@ useEffect(() => {
               placeholder="Select MRP"
             />
           </CCol> */}
-           <CCol sm={3} >
+           <CCol lg={3} sm={12} xs={12} >
               <label htmlFor="dateRange" className="form-label" style={{ fontSize: "12px" }}>
                 Date Range
               </label>
@@ -693,29 +704,28 @@ useEffect(() => {
           </CRow>
           <hr />
           <CRow>
-            <CCol lg={2} sm={2} xs={2}>
-            <CCard className="mb-1 ">
-                <CCardHeader className="text-muted small text-center fw-bold">
-                  Total Red Post
-                </CCardHeader>
-                <CCardBody className="text-center">
-                  <CCardText className="fs-1 fw-bold">{cardData?.totalRedPost || "-"}</CCardText>
-                </CCardBody>
-              </CCard>
+            <CCol lg={2} sm={12} xs={12}>
+            <CCard className="mb-1 border border-danger"> {/* Border merah */}
+              <CCardHeader className="small text-center fw-bold" style={{ color: '#62757d' }}>
+                Total Red Post
+              </CCardHeader>
+              <CCardBody className="text-center">
+                <CCardText className="fs-1 fw-bold">{cardData?.totalRedPost || "-"}</CCardText>
+              </CCardBody>
+            </CCard>
 
-              <CCard className="mb-1 mt-2">
-                <CCardHeader className="text-muted small text-center fw-bold">
-                  SOH ＞ 0
-                </CCardHeader>
-                <CCardBody className="text-center">
-                  <CCardText className="fs-1 fw-bold">{cardData?.totalSoh || "-"}</CCardText>
-                </CCardBody>
-              </CCard>
-             
+            <CCard className="mb-1 mt-2 border border-warning"> {/* Border kuning */}
+              <CCardHeader className="text-muted small text-center fw-bold">
+                SOH ＞ 0
+              </CCardHeader>
+              <CCardBody className="text-center">
+                <CCardText className="fs-1 fw-bold">{cardData?.totalSoh || "-"}</CCardText>
+              </CCardBody>
+            </CCard>
             </CCol>
-              <CCol lg={10} sm={6} xs={12}>
+              <CCol lg={10} sm={12} xs={12}>
               <div className="mb-2 mt-1">
-                <h6>Summary Red Post By Material No</h6>
+                <h6>Summary Red Post By Material </h6>
                 <div style={{ width: "100%", height: "15rem" }}>
                   {combGraphData ? <Bar data={combGraphData} options={combinedOptions} /> : <p>Loading...</p>}
                 </div>
@@ -724,7 +734,7 @@ useEffect(() => {
               
                 </CRow>
                 <CRow className="align-items-center">   
-                  <CCol lg={2} sm={6} xs={12} className="mb-1 mt-1">
+                  <CCol lg={2} sm={12} xs={12} className="mb-1 mt-1">
                     <h6 className="text-center">Total Material By Shift</h6>
                     <div style={{ width: "100%", height: "12rem" }}>
                       {doughnutGraph ? (
@@ -734,18 +744,19 @@ useEffect(() => {
                       )}
                     </div>
                     </CCol>
-                    <CCol lg={10} sm={6} xs={12}>
-                <div className="mb-2 mt-1">
-                  <h6>Summary Red Post By Date </h6>
-                  <div style={{ width: '100%', height: '15rem' }}>
-                    {lineGraph.labels.length > 0 ? (
-                      <Bar data={lineGraph} options={lineChartOptions} />
-                    ) : (
-                      <p>Loading...</p> // ❗ Mencegah error dengan menunggu data
-                    )}
-                  </div>
-                </div>
-                </CCol>
+                    <CCol lg={10} sm={12} xs={12}>
+                      <div className="mb-2 mt-1">
+                        <h6>Summary Red Post By Date</h6>
+                        <div style={{ width: "100%", height: "100%", }}> 
+                          {lineGraph.labels.length > 0 ? (
+                            <Line data={lineGraph} options={lineChartOptions} height={85} />
+                          ) : (
+                            <p>Loading...</p> // ❗ Mencegah error dengan menunggu data
+                          )}
+                        </div>
+                      </div>
+                    </CCol>
+
                   {/* </CCol>
                     <h6>Summary Red Post Material No By Shift</h6>
                     <div style={{ width: "100%", height: "20rem" }}>

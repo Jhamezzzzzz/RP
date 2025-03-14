@@ -2,12 +2,11 @@ import { Sequelize } from "sequelize";
 import db from "../utils/Database.js";
 import Shift from "./ShiftModel.js";  
 import Pic from "./PicModel.js";  
-import StockData from "./StockDataModel.js"; 
 
 const { DataTypes } = Sequelize;
 
-const InputRedPost = db.define(
-  "InputRedPost",
+const InputDefisit = db.define(
+  "InputDefisit",
   {
     InputDate: {
       type: DataTypes.DATEONLY,
@@ -43,19 +42,19 @@ const InputRedPost = db.define(
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      OrderPic: {
+      DefPic: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      Soh: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
+    //   Soh: {
+    //     type: DataTypes.INTEGER,
+    //     allowNull: false,
+    //   },
       Section: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      Remark: {
+      NoGI: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -63,18 +62,6 @@ const InputRedPost = db.define(
         type: DataTypes.DATEONLY,
         allowNull: true,
       },
-      SohEditDate: {
-        type: DataTypes.DATEONLY,
-        allowNull: true,
-      },
-      SohEdit: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },  
-      Remaining: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      }, 
     flag: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -86,16 +73,16 @@ const InputRedPost = db.define(
   }
 );
 //Asosiasi
-Shift.hasMany(InputRedPost, { foreignKey: "ShiftId" });
-InputRedPost.belongsTo(Shift, { foreignKey: "ShiftId" });
+Shift.hasMany(InputDefisit, { foreignKey: "ShiftId" });
+InputDefisit.belongsTo(Shift, { foreignKey: "ShiftId" });
 
-Pic.hasMany(InputRedPost, { foreignKey: "PicId" });
-InputRedPost.belongsTo(Pic, { foreignKey: "PicId" });
+Pic.hasMany(InputDefisit, { foreignKey: "PicId" });
+InputDefisit.belongsTo(Pic, { foreignKey: "PicId" });
 
-StockData.hasMany(InputRedPost, { foreignKey: "StockDataId" });
-InputRedPost.belongsTo(StockData, { foreignKey: "StockDataId" });
+// StockData.hasMany(InputRedPost, { foreignKey: "StockDataId" });
+// InputRedPost.belongsTo(StockData, { foreignKey: "StockDataId" });
 
 
-export default InputRedPost;
+export default InputDefisit;
 
 

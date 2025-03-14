@@ -6,7 +6,7 @@ import axios from 'axios'
 
 const MySwal = withReactContent(Swal)
 
-const useInputService = () => {
+const useInputDefService = () => {
   const { axiosAutoToken  } = useVerify()
   const { token, axiosJWT } = useVerify2()
 
@@ -17,50 +17,49 @@ const useInputService = () => {
     throw new Error(message + error.message)
   }
 
-  const getInput = async () => {
+  const getInputDefisit = async () => {
     try {
-      const response = await axiosAutoToken.get(`/inputRedPost/`, {
+      const response = await axiosAutoToken.get(`/inputDefisit/`, {
       })
       return response
     } catch (error) {
-      handleError(error, 'Error fetching inventory:')
+      handleError(error, 'Error fetching inputDefisit:')
     }
   }
-  const getInputById = async (id) => {
+  const getInputDefisitById = async (id) => {
     try {
-      const response = await axiosAutoToken.get(
-        `/inputRedPost/${id}`,
+      const response = await axiosAutoToken.get(`/inputDefisit/${id}`,
 
       )
       return response
     } catch (error) {
-      handleError(error, 'Error fetching inventory:')
+      handleError(error, 'Error fetching inputDefisit:')
     }
   }
-  const postInput = async (data) => {
+  const postInputDefisit = async (data) => {
     try {
-      const response = await axiosAutoToken.post(`/inputRedPost/`, data, )
+      const response = await axiosAutoToken.post(`/inputDefisit/`, data, )
       return response
     } catch (error) {
-      handleError(error, 'Error post:')
+      handleError(error, 'Error post inputDefisit')
     }
   }
 
-  const updateInput = async (id,data) => {
+  const updateInputDefisit = async (id,data) => {
     try {
-      const response = await axiosAutoToken.put(`/inputRedPost/${id}`, data, {
+      const response = await axiosAutoToken.put(`/inputDefisit/${id}`, data, {
    
       })
       return response
     } catch (error) {
-      handleError(error, 'Error post:')
+      handleError(error, 'Error put inputDefisit:')
     }
   }
 
 
   const deleteInputById = async (id) => {
     try {
-      const response = await axiosAutoToken.get(`/inputRedPost-delete/${id}`, {
+      const response = await axiosAutoToken.get(`/inputDefisit-delete/${id}`, {
         // headers: {
         //   Authorization: `Bearer ${token}`,
         // },
@@ -136,10 +135,10 @@ const useInputService = () => {
     }
   }
   return {
-    getInput,
-    getInputById,
-    postInput,
-    updateInput,
+    getInputDefisit,
+    getInputDefisitById,
+    postInputDefisit,
+    updateInputDefisit,
     deleteInputById,
     getMaterial,
     getGic,
@@ -149,4 +148,4 @@ const useInputService = () => {
   }
 }
 
-export default useInputService
+export default useInputDefService
