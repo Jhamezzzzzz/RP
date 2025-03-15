@@ -29,7 +29,6 @@ const InputDefisit = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-   
     CardNo: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -39,6 +38,14 @@ const InputDefisit = db.define(
       allowNull: true,
     },
       QtyReq: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      QtyUpdate: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      RemainQty: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },

@@ -214,8 +214,8 @@ const { name, roleName, imgProfile } = useVerify()
     //   )
     // }
     {
-      field: "GI No",
-      header: "NoGI",
+      field: "NoGI",
+      header: "GI Number",
       body: (rowData) => (
         <div 
           style={{ 
@@ -440,6 +440,8 @@ useEffect(() => {
       CardNo: selectedCard?.label, // Description yang dipilih
       Uom:baseUom,
       QtyReq: qtyRec, // Card No yang dipilih
+      QtyUpdate:"",
+      RemainQty:"",
       DefPic: "",
       Section: selectedSection,
       NoGI: "", // Remark awal kosong
@@ -601,6 +603,8 @@ const exportExcel = () => {
       CardNo: item.CardNo || "",
       Section: item.Section || "",
       QtyRec: item.QtyReq || 0,
+      // QtyUpd: item.QtyUpdate || 0,
+      // Remain: item.RemainQty || 0,
       OrderDate: item.OrderDate || "",
       DefPic: item.DefPic || "",
       NoGI: item.NoGI || "",
