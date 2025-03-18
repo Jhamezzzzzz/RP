@@ -152,123 +152,7 @@ const { name, roleName, imgProfile } = useVerify()
       matchMode: FilterMatchMode.EQUALS,
     },
   })
-  const columns = [
-    // {
-    //   field: "Remark",
-    //   header: "Remark",
-    //   body: (rowData) => (
-    //     <div 
-    //       style={{ 
-    //         display: "flex", 
-    //         alignItems: "center", 
-    //         background: "white", 
-    //         padding: "5px", 
-    //         borderRadius: "4px", 
-    //         justifyContent: "space-between",
-    //         maxWidth: "200px", // Batas lebar kotak
-    //       }}
-    //     >
-    //       {isEditing === rowData.id ? (
-    //         <input 
-    //           type="text" 
-    //           value={editingRemark} 
-    //           onChange={(e) => setEditingRemark(e.target.value)} 
-    //           style={{ 
-    //             flexGrow: 1, 
-    //             border: "none", 
-    //             outline: "none", 
-    //             maxWidth: "150px", 
-    //             overflow: "hidden"
-    //           }} 
-    //           // placeholder=""
-    //         />
-    //       ) : (
-    //         <span 
-    //           style={{ 
-    //             flexGrow: 1, 
-    //             color: rowData.Remark && rowData.Remark.trim() ? "black" : "gray", 
-    //             maxWidth: "150px", 
-    //             whiteSpace: "nowrap", 
-    //             overflow: "hidden", 
-    //             textOverflow: "ellipsis"
-    //           }}
-    //           title={rowData.Remark} 
-    //         >
-    //           {rowData.Remark && rowData.Remark.trim() ? rowData.Remark : "...."}
-    //         </span>
-    //       )}
-    //       <button 
-    //     onClick={(e) => {
-    //       e.stopPropagation(); // Cegah event bubbling
-    //       isEditing === rowData.id ? handleSubmitRemark(rowData) : handleEditRemark(rowData);
-    //     }}
-    //     style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
-    //   >
-    //     {isEditing === rowData.id ? (
-    //       <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
-    //     ) : (
-    //       <FontAwesomeIcon icon={faPencilAlt} style={{ color: "gray" }} />
-    //     )}
-    //   </button>
-    //     </div>
-    //   )
-    // }
-    {
-      field: "NoGI",
-      header: "GI Number",
-      body: (rowData) => (
-        <div 
-          style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            background: "white", 
-            padding: "5px", 
-            borderRadius: "4px", 
-            justifyContent: "space-between",
-            maxWidth: "130px",
-          }}
-        >
-           { (roleName === "group head" || roleName === "super admin") ? (
-            <>
-          <input 
-            type="text" 
-            value={rowData.Remark || ""} 
-            onChange={(e) => handleRemarkChange(rowData.id, e.target.value)}
-            style={{ 
-              flexGrow: 1, 
-              border: "none", 
-              outline: "none", 
-              maxWidth: "90px", 
-              overflow: "hidden",
-              background: "transparent" 
-            }} 
-          />
-           <button 
-              onClick={() => handleSubmitRemark(rowData)}
-              style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
-            >
-              <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
-            </button>
-          </>
-      ) : (
-        <span 
-          style={{ 
-            flexGrow: 1, 
-            color: rowData.Remark && rowData.Remark.trim() ? "black" : "gray", 
-            maxWidth: "130px", 
-            whiteSpace: "nowrap", 
-            overflow: "hidden", 
-            textOverflow: "ellipsis"
-          }}
-          title={rowData.Remark} 
-        >
-          {rowData.Remark && rowData.Remark.trim() ? rowData.Remark : "...."}
-        </span>
-      )}
-    </div>
-      )
-    }
-  ];
+
   
   
       const fetchData = async () => {
@@ -745,12 +629,6 @@ const onRowEditComplete = async (e) => {
 };
 
 
-
-
-const mrpBodyTemplate = (rowData) => {
-    return rowData.Mrp === 'NQC' ? <Tag severity="danger" value={rowData.Mrp} /> : rowData.Mrp;
-};
-
 const actionBodyTemplate = (rowData) => {
     return (
 <Button 
@@ -860,52 +738,11 @@ const actionBodyTemplateRec = (rowData) => {
   );
 };
 
-// const handleUpload = async () => {
-//   if (!uploadData.file) {
-//     MySwal.fire('Error', 'Please select a file to upload.', 'error')
-//     return
-//   }
-
-//   setLoadingImport(true)
-
-//   // Buat FormData kosong
-//   const formData = new FormData()
-//   formData.append('file', uploadData.file) // Tambahkan file
-//   formData.append('importDate', uploadData.importDate) // Tambahkan tanggal impor
-
-//   try {
-//     await uploadInputData(formData) // Panggil API untuk upload data
-//     MySwal.fire('Success', 'File uploaded successfully.', 'success')
-//     setModalUpload(false)
-//     fetchStockData() // Refresh data setelah upload berhasil
-//   } catch (error) {
-//     console.error('Failed to upload file:', error)
-//   } finally {
-//     setLoadingImport(false) // Hentikan animasi loading
-//   }
-// }
-// const showModalUpload = () => {
-//   setModalUpload(true)
-// }
-// const handleDateChange = (selectedDate) => {
-//   setDate(selectedDate[0])
-//   setUploadData((prevData) => ({
-//     ...prevData,
-//     importDate: selectedDate[0],
-//   }))
-// }
-// const handleFileChange = (e) => {
-//   const file = e.target.files[0]
-//   setUploadData((prevData) => ({
-//     ...prevData,
-//     file: file,
-//   }))
-// }
 
 const handleRemarkChange = (id, value) => {
   setItems((prevItems) =>
     prevItems.map((item) =>
-      item.id === id ? { ...item, Remark: value } : item
+      item.id === id ? { ...item, NoGI: value } : item
     )
   );
 };
@@ -914,12 +751,20 @@ const handleSubmitRemark = async (rowData) => {
   const updatedData = { ...rowData };
 
   try {
-    await updateInput(rowData.id, updatedData);
+    await updateInputDefisit(rowData.id, updatedData);
     console.log("Remark updated:", updatedData);
+
+    // **Update state setelah berhasil submit**
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === rowData.id ? { ...item, Remark: updatedData.Remark } : item
+      )
+    );
   } catch (error) {
     console.error("Error updating remark: ", error);
   }
 };
+
 
 
 const handleDateChangeTabel = (e) => {
@@ -987,7 +832,7 @@ const handleSubmitDateOrder = async (rowData) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === rowData.id 
-          ? { ...item, OrderDate: rowData.OrderDate, DefPic: name } 
+          ? { ...item, OrderDate: rowData.OrderDate, DefPic: name,NoGI:rowData.NoGI} 
           : item
       )
     );
@@ -998,28 +843,6 @@ const handleSubmitDateOrder = async (rowData) => {
   }
 };
 
-
-
-
-const onColumnToggle = (event) => {
-  let selectedColumns = event.value
-  let orderedSelectedColumns = columns.filter((col) =>
-    selectedColumns.some((sCol) => sCol.field === col.field),
-  )
-  setVisibleColumns(orderedSelectedColumns)
-}
-const header = () => (
-  <MultiSelect
-    value={visibleColumns}
-    options={columns}
-    optionLabel="header"
-    onChange={onColumnToggle}
-    className="w-full sm:w-20rem mb-2 mt-2"
-    display="chip"
-    placeholder="Show Hidden Columns"
-    style={{ borderRadius: '5px' }}
-  />
-)
 
   return (
     <CRow>
@@ -1359,7 +1182,6 @@ const header = () => (
                       sortField={sortField} 
                       sortOrder={sortOrder} 
                       onSort={onSort}
-                      header={header}
                       paginator 
                       rowsPerPageOptions={[12, 50, 100, 500]}
                       rows={12}
@@ -1374,6 +1196,7 @@ const header = () => (
                       scrollHeight="900px"
                       scrollDirection="horizontal"
                     >
+                        <Column className='' header="No" body={(rowBody, { rowIndex }) => rowIndex + 1}></Column>
                       <Column field="InputDate" header="Date" 
                       sortable
                       frozen alignFrozen="left"
@@ -1468,40 +1291,57 @@ const header = () => (
                     </div>
                   )}
                 />
-                   {visibleColumns.map((col, index) => (
-                    <Column
-                      key={index}
-                      field={col.field}
-                      header={col.header}
-                      body={col.body}
-                      sortable={col.sortable}
-                      // headerStyle={col.headerStyle}
-                      // bodyStyle={col.bodyStyle}
-                    />
-                  ))}
-                {/* <Column 
-                  field="Status" 
-                  frozen alignFrozen="right"
-                  header="Status"  
-                  body={(rowData) => (
-                    <div style={{ textAlign: 'center', fontWeight: 'bold', color: 'red' }}>
-                      {rowData.Soh > 0 ? (
-                        <FontAwesomeIcon 
-                          icon={faExclamationTriangle} 
-                          style={{ color: 'orange', fontSize: '1.2rem' }} 
-                          title="≠ IWMS" 
-                        />
-                      ) : (
-                        <FontAwesomeIcon 
-                          icon={faCircle} 
-                          style={{ color: 'green', fontSize: '1.2rem' }} 
-                          title="= IWMS" 
-                        />
-                      )}
-                    </div>
+    
+                <Column
+              field="NoGI"
+              header="GI Number"
+              body={(rowData) => (
+                <div 
+                  style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    background: "white", 
+                    padding: "5px", 
+                    borderRadius: "4px", 
+                    justifyContent: "space-between",
+                    maxWidth: "130px",
+                  }}
+                >
+                  {(roleName === "group head" || roleName === "super admin") ? (
+                    <>
+                      <input 
+                        type="text" 
+                        value={rowData.NoGI || ""} 
+                        onChange={(e) => handleRemarkChange(rowData.id, e.target.value)}
+                        style={{ 
+                          flexGrow: 1, 
+                          border: "none", 
+                          outline: "none", 
+                          maxWidth: "90px", 
+                          overflow: "hidden",
+                          background: "transparent" 
+                        }} 
+                      />
+                    
+                    </>
+                  ) : (
+                    <span 
+                      style={{ 
+                        flexGrow: 1, 
+                        color: rowData.NoGI && rowData.NoGI.trim() ? "black" : "gray", 
+                        maxWidth: "130px", 
+                        whiteSpace: "nowrap", 
+                        overflow: "hidden", 
+                        textOverflow: "ellipsis"
+                      }}
+                      title={rowData.NoGI} 
+                    >
+                      {rowData.NoGI && rowData.NoGI.trim() ? rowData.NoGI : "...."}
+                    </span>
                   )}
-                  sortable
-                /> */}
+                </div>
+              )}
+              />
              <Column 
               header="Action"
               body={(rowData) => {
@@ -1548,73 +1388,6 @@ const header = () => (
                   </DataTable>
                 </div>
               </CRow>
-                {/* <CModal visible={modalUpload} onClose={() => setModalUpload(false)}>
-                  <CModalHeader>
-                    <CModalTitle id="LiveDemoExampleLabel">Upload Master Material</CModalTitle>
-                  </CModalHeader>
-                  <CModalBody>
-                    <div className="mb-3">
-                      <CFormLabel>Date</CFormLabel>
-                      <Flatpickr
-                        value={date}
-                        options={{
-                          dateFormat: 'Y-m-d',
-                          maxDate: new Date(),
-                          allowInput: true,
-                        }}
-                        onChange={handleDateChange}
-                        className="form-control"
-                        placeholder="Select a date"
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <CFormInput
-                        onChange={handleFileChange} // Handle perubahan file
-                        type="file"
-                        label="Excel File"
-                        accept=".xlsx" // Hanya menerima file Excel
-                      />
-                    </div>
-                  </CModalBody>
-                  <CModalFooter>
-                    <Suspense
-                      fallback={
-                        <div className="pt-3 text-center">
-                          <CSpinner color="primary" variant="grow" />
-                        </div>
-                      }
-                    >
-                      <CButton color="primary" onClick={handleUpload} disabled={loadingImport}>
-                        {loadingImport ? (
-                          <>
-                            <CSpinner component="span" size="sm" variant="grow" className="me-2" />
-                            Importing...
-                          </>
-                        ) : (
-                          'Import'
-                        )}
-                      </CButton>
-                    </Suspense>
-                  </CModalFooter>
-                </CModal>
-                <CModal visible={isModalOpen} onClose={closeModal}>
-                  <CModalHeader>
-                    <CModalTitle>Card No Detail</CModalTitle>
-                  </CModalHeader>
-                  <CModalBody>
-                    {selectedDialog && (
-                      <div>
-                        <p><strong>Card No:</strong> {selectedDialog.CardNo}</p>
-                        <p><strong>Section:</strong> {selectedDialog.Section}</p>
-                      </div>
-                    )}
-                  </CModalBody>
-                  <CModalFooter>
-                    <CButton color="secondary" onClick={closeModal}>
-                      Close
-                    </CButton>
-                  </CModalFooter>
-                </CModal> */}
             </CCardBody>
           </CForm>
         </CCard>

@@ -5,6 +5,7 @@ import Pic from "./PicModel.js";
 import Shift from "./ShiftModel.js";
 import StockData from "./StockDataModel.js";
 import InputRedPost from "./InputModel.js";
+import DefisitCompare from "./CompareModel.js";
 
 
 
@@ -14,7 +15,7 @@ import InputRedPost from "./InputModel.js";
      //logMasterAssociations();
     //await db.sync();
     //  await db.sync({ force: true });
-    //  await InputDefisit.sync({ force: true });
+    //  await DefisitCompare.sync({ force: true });
     // await InputRedPost.sync({ alter: true });
     console.log("Database synced successfully.");
   } catch (error) {

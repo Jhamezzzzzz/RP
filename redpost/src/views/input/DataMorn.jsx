@@ -275,7 +275,10 @@ const DataStock = () => {
                       <CTableDataCell>{item.soh}</CTableDataCell>
                       <CTableDataCell>{item.uom}</CTableDataCell>
                       <CTableDataCell>
-                        {new Date(item.createdAt).toISOString().replace('T', ' ').slice(0, 16)}
+                      {new Date(new Date(item.createdAt).getTime() + 7 * 60 * 60 * 1000)
+                      .toISOString()
+                      .replace('T', ' ')
+                      .slice(0, 16)}
                       </CTableDataCell>
                     </CTableRow>
                   ))}

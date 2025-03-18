@@ -6,6 +6,7 @@ import {
   cilClipboard,
   cilAccountLogout,
   cilPhone,
+  cilBalanceScale,
   cilColumns
 } from '@coreui/icons'
 import Swal from 'sweetalert2'
@@ -51,6 +52,12 @@ const useNav = () => {
       name: 'Dashboard',
       to: '/dashboard',
       icon: <CIcon icon={cilBarChart} customClassName="nav-icon" />,
+    },
+    {
+      component: CNavItem,
+      name: 'SOH X Defisit',
+      to: '/defisit-compare',
+      icon: <CIcon icon={cilBalanceScale} customClassName="nav-icon" />,
     },
     {
       component: CNavTitle,

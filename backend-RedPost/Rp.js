@@ -11,6 +11,7 @@ import dataMasterRouter from "./routes/DataMasterRouter.js";
 import inputRedPost from "./routes/InputRedPost.js";
 import inputDefisit from "./routes/DefisitRoute.js";
 import stockData from "./routes/StockData.js";
+import compare from "./routes/CompareRoute.js";
 // import { verifyToken } from "./middleware/VerifyToken.js";
 
 dotenv.config();
@@ -58,6 +59,7 @@ app.use("/api", dataMasterRouter);
 app.use("/api", inputRedPost);
 app.use("/api", stockData);
 app.use("/api", inputDefisit);
+app.use("/api", compare);
 
 
 
