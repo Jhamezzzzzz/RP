@@ -87,7 +87,6 @@ const InputInventory = () => {
   const [shiftOptions, setShiftOptions] = useState([]);
 const [editingRemark, setEditingRemark] = useState(null);
   const [selectedShift, setSelectedShift] = useState(null);
-  const {getInput,getInputById,postInput,updateInput,deleteInputById,getMaterial,getGic,getWbs,getMasterData,uploadInputData } = useInputService()
   const { getCompareDefisit,updateCompareDefisit} = useCompareDefService()
   const [stockData, setStockData] = useState([]);
   const [sohData, setSohData] = useState();
@@ -129,69 +128,74 @@ const [loading, setLoading] = useState(false);
       matchMode: FilterMatchMode.EQUALS,
     },
   })
-  const columns = [
-    {
-      field: "Remark",
-      header: "Remark",
-      body: (rowData) => (
-        <div 
-          style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            background: "white", 
-            padding: "5px", 
-            borderRadius: "4px", 
-            justifyContent: "space-between",
-            maxWidth: "130px",
-          }}
-        >
-           { (roleName === "group head" || roleName === "super admin") ? (
-            <>
-          <input 
-            type="text" 
-            value={rowData.Remark || ""} 
-            onChange={(e) => handleRemarkChange(rowData.id, e.target.value)}
-            style={{ 
-              flexGrow: 1, 
-              border: "none", 
-              outline: "none", 
-              maxWidth: "90px", 
-              overflow: "hidden",
-              background: "transparent" 
-            }} 
-          />
-          <button 
-            onClick={() => handleSubmitRemark(rowData)}
-            style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
-          >
-            <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
-          </button>
-          </>
-      ) : (
-        <span 
-          style={{ 
-            flexGrow: 1, 
-            color: rowData.Remark && rowData.Remark.trim() ? "black" : "gray", 
-            maxWidth: "130px", 
-            whiteSpace: "nowrap", 
-            overflow: "hidden", 
-            textOverflow: "ellipsis"
-          }}
-          title={rowData.Remark} 
-        >
-          {rowData.Remark && rowData.Remark.trim() ? rowData.Remark : "...."}
-        </span>
-      )}
-    </div>
-      )
-    }
-  ];
+  // const columns = [
+  //   {
+  //     field: "Remark",
+  //     header: "Remark",
+  //     body: (rowData) => (
+  //       <div 
+  //         style={{ 
+  //           display: "flex", 
+  //           alignItems: "center", 
+  //           background: "white", 
+  //           padding: "1px", 
+  //           borderRadius: "4px", 
+  //           justifyContent: "space-between",
+  //           maxWidth: "120px",
+  //         }}
+  //       >
+  //          { (roleName === "group head" ||roleName === "line head" || roleName === "super admin") ? (
+  //           <>
+  //         <input 
+  //           type="text" 
+  //           value={rowData.Remark || ""} 
+  //           onChange={(e) => handleRemarkChange(rowData.id, e.target.value)}
+  //           style={{ 
+  //             flexGrow: 1, 
+  //             border: "none", 
+  //             outline: "none", 
+  //             maxWidth: "140px", 
+  //             overflow: "hidden",
+  //             background: "transparent" 
+  //           }} 
+  //         />
+  //         <button 
+  //           onClick={() => handleSubmitRemark(rowData)}
+  //           style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
+  //         >
+  //           <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
+  //         </button>
+  //         </>
+  //     ) : (
+  //       <span 
+  //         style={{ 
+  //           flexGrow: 1, 
+  //           color: rowData.Remark && rowData.Remark.trim() ? "black" : "gray", 
+  //           maxWidth: "250px", 
+  //           whiteSpace: "nowrap", 
+  //           overflow: "hidden", 
+  //           textOverflow: "ellipsis"
+  //         }}
+  //         title={rowData.Remark} 
+  //       >
+  //         {rowData.Remark && rowData.Remark.trim() ? rowData.Remark : "...."}
+  //       </span>
+  //     )}
+  //   </div>
+  //     )
+  //   }
+  // ];
   
   const fetchDataCompare = async (startDate = "", endDate = "") => {
     try {
       setLoading(true); 
       const response = await getCompareDefisit(startDate, endDate); 
-      setItems(response?.data || []); 
+      const formattedData = response?.data?.map((item, index) => ({
+        ...item,
+        id: item.id || index,  // Jika tidak ada ID, pakai index
+      }));
+  
+      setItems(formattedData); 
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
@@ -290,18 +294,13 @@ const exportExcel = () => {
     // ✅ Mapping data dengan memastikan nilai tidak null atau undefined
     const mappedData = items.map((item, index) => ({
       No: index + 1,
-      Date: item.InputDate || "", // Pastikan tidak null
-      Shift: shiftOptions.find((shift) => shift.value === item.ShiftId)?.label || "",
+      // Date: item.InputDate || "", // Pastikan tidak null
       MaterialNo: item.MaterialNo || "",
       Description: item.Description || "",
-      PIC: picOptions.find((pic) => pic.value === item.PicId)?.label || "",
       Address: item.Address || "",
-      CardNo: item.CardNo || "",
-      Section: item.Section || "",
-      QtyRec: item.QtyReq || 0,
-      SOH: item.StockDatum?.soh ?? 0, // Gunakan `??` untuk nilai default
-      OrderDate: item.OrderDate || "",
-      OrderPic: item.OrderPic || "",
+      Uom: item.Uom || "",
+      Defisit: item.Defisit || 0,
+      SOH: item.StockDatum?.Soh ?? 0, // Gunakan `??` untuk nilai default
       Remark: item.Remark || "",
     }));
 
@@ -322,7 +321,7 @@ const exportExcel = () => {
     });
 
     // ✅ Simpan file Excel
-    saveAsExcelFile(excelBuffer, `Data_Red_Post_${formattedDate}`);
+    saveAsExcelFile(excelBuffer, `Data_Compare_Defisit_&_Soh_${formattedDate}`);
   });
 };
 
@@ -367,59 +366,9 @@ const saveAsExcelFile = (buffer, fileName) => {
     setSortOrder(e.sortOrder);
 };
 
-const onRowEditComplete = async (e) => {
-  let { newData, index } = e;
-  let updatedData = [...data];
-  updatedData[index] = newData;
-  try {
-      if (newData.id) {
-          await updateInput(Number(newData.id), { QtyReq: Number(newData.QtyReq) || 0 });
-      } else {
-          await postInput({ QtyReq: Number(newData.QtyReq) || 0 });
-      }
-  } catch (error) {
-      console.error('Error updating or adding data:', error);
-  }
-};
 
 
-const handleEditClick = (itemId, qtyReqValue) => {
-  setIsEditable(itemId); // Tandai item yang sedang diedit
-  setQtyRecValues((prev) => ({
-    ...prev,
-    [itemId]: qtyReqValue ?? "", // Pastikan nilai awal tidak undefined
-  }));
-};
 
-const handleQtyUpdate = (e, itemId) => {
-  setQtyRecValues((prev) => ({
-    ...prev,
-    [itemId]: e.target.value,
-  }));
-};
-
-const handleSubmitQty = async (itemId) => {
-  setIsEditable(null); // Nonaktifkan mode edit setelah submit
-
-  try {
-    const updatedItem = { QtyReq: Number(qtyRecValues[itemId]) || 0 };
-
-    if (itemId) {
-      await updateInput(Number(itemId), updatedItem);
-    } else {
-      await postInput(updatedItem);
-    }
-
-    // Perbarui nilai di tabel setelah berhasil update
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, QtyReq: updatedItem.QtyReq } : item
-      )
-    );
-  } catch (error) {
-    console.error("Error updating or adding data:", error);
-  }
-};
 
 const handleKeyPress = async (e, itemId) => {
   if (e.key === "Enter") {
@@ -438,12 +387,20 @@ const handleRemarkChange = (id, value) => {
     )
   );
 };
+// const handleSubmitRemark = async (rowData) => {
+//   try {
+//     await updateCompareDefisit(rowData.id, rowData.Remark); // Kirim update ke backend
+//     console.log(`Updated Remark for ID: ${rowData.id}`);
+//   } catch (error) {
+//     console.error("Failed to update remark:", error);
+//   }
+// };
 
-const handleSubmitRemark = async (rowData) => {
+const   handleSubmitRemark = async (rowData) => {
   const updatedData = { ...rowData };
 
   try {
-    await updateInput(rowData.id, updatedData);
+    await updateCompareDefisit(rowData.id, updatedData);
     console.log("Remark updated:", updatedData);
   } catch (error) {
     console.error("Error updating remark: ", error);
@@ -492,25 +449,25 @@ const handlePicChange = (selected) => {
 };
 
 
-const onColumnToggle = (event) => {
-  let selectedColumns = event.value
-  let orderedSelectedColumns = columns.filter((col) =>
-    selectedColumns.some((sCol) => sCol.field === col.field),
-  )
-  setVisibleColumns(orderedSelectedColumns)
-}
-const header = () => (
-  <MultiSelect
-    value={visibleColumns}
-    options={columns}
-    optionLabel="header"
-    onChange={onColumnToggle}
-    className="w-full sm:w-20rem mb-2 mt-2"
-    display="chip"
-    placeholder="Show Hidden Columns"
-    style={{ borderRadius: '5px' }}
-  />
-)
+// const onColumnToggle = (event) => {
+//   let selectedColumns = event.value
+//   let orderedSelectedColumns = columns.filter((col) =>
+//     selectedColumns.some((sCol) => sCol.field === col.field),
+//   )
+//   setVisibleColumns(orderedSelectedColumns)
+// }
+// const header = () => (
+//   <MultiSelect
+//     value={visibleColumns}
+//     options={columns}
+//     optionLabel="header"
+//     onChange={onColumnToggle}
+//     className="w-full sm:w-20rem mb-2 mt-2"
+//     display="chip"
+//     placeholder="Show Hidden Columns"
+//     style={{ borderRadius: '5px' }}
+//   />
+// )
 
 const statusBodyTemplate = (rowData) => {
   if (rowData.Soh > 0 && rowData.Defisit > 0) {
@@ -590,14 +547,13 @@ const statusBodyTemplate = (rowData) => {
                       sortField={sortField} 
                       sortOrder={sortOrder} 
                       onSort={onSort}
-                      header={header}
+                      // header={header}
                       paginator 
                       rowsPerPageOptions={[12, 50, 100, 500]}
                       rows={12}
                       filters={filters}
                       globalFilterFields={['date', 'pic', 'shift', 'materialNo', 'description']}
                       editable 
-                      onRowEditComplete={onRowEditComplete}
                       editingRows={editingRows} 
                       onEditingRowsChange={setEditingRows}
                       className="custom-table dashboard"
@@ -641,7 +597,13 @@ const statusBodyTemplate = (rowData) => {
                               </span>
                           )}
                       />
-                   {visibleColumns.map((col, index) => (
+                  
+                     <Column 
+                      header="Status"
+                      body={statusBodyTemplate} 
+                      style={{ textAlign: "center" }}
+                  />
+                   {/* {visibleColumns.map((col, index) => (
                     <Column
                       key={index}
                       field={col.field}
@@ -651,12 +613,7 @@ const statusBodyTemplate = (rowData) => {
                       // headerStyle={col.headerStyle}
                       // bodyStyle={col.bodyStyle}
                     />
-                  ))}
-                     <Column 
-                      header="Status"
-                      body={statusBodyTemplate} 
-                      style={{ textAlign: "center" }}
-                  />
+                  ))} */}
                   </DataTable>
                 </div>
               </CRow>

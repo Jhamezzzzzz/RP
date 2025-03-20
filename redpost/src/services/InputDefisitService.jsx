@@ -26,6 +26,19 @@ const useInputDefService = () => {
       handleError(error, 'Error fetching inputDefisit:')
     }
   }
+  const getTotalInputDefisit = async (selectedDate) => {
+    try {
+      const response = await axiosAutoToken.get(`/total-inputDefisit/`, {
+        params: selectedDate ? { date: selectedDate } : {}, // Jika tanggal ada, kirim sebagai parameter, jika tidak, kirim kosong
+      });
+      return response.data; // Return hanya `totalDefisit`
+    } catch (error) {
+      handleError(error, "Error fetching inputDefisit:");
+      return { totalDefisit: 0 }; // Default ke 0 jika terjadi error
+    }
+  };
+  
+  
   const getInputDefisitById = async (id) => {
     try {
       const response = await axiosAutoToken.get(`/inputDefisit/${id}`,
@@ -126,16 +139,17 @@ const useInputDefService = () => {
       handleError(error, 'Error fetching:')
     }
   }
-  const uploadInputData = async (data) => {
-    try {
-      const response = await axiosAutoToken.post(`upload-inputRedPost`, data)
-      return response
-    } catch (error) {
-      handleError(error, 'Error post StockData:')
-    }
-  }
+  // const uploadInputData = async (data) => {
+  //   try {
+  //     const response = await axiosAutoToken.post(`upload-inputRedPost`, data)
+  //     return response
+  //   } catch (error) {
+  //     handleError(error, 'Error post StockData:')
+  //   }
+  // }
   return {
     getInputDefisit,
+    getTotalInputDefisit,
     getInputDefisitById,
     postInputDefisit,
     updateInputDefisit,
@@ -144,7 +158,7 @@ const useInputDefService = () => {
     getGic,
     getWbs,
     getMasterData,
-    uploadInputData
+    // uploadInputData
   }
 }
 

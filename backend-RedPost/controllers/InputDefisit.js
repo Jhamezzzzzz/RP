@@ -20,6 +20,30 @@ export const getInputDefisit = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+export const getTotalInputDefisit = async (req, res) => {
+  try {
+    const { date } = req.query; // Ambil parameter date dari query
+
+    // Filter hanya jika date diberikan
+    const dateFilter = date ? { InputDate: date } : {};
+
+    // Hitung total defisit dengan filter flag = 1, dan filter tanggal jika ada
+    const totalDefisit = await InputDefisit.count({
+      where: {
+        ...dateFilter, 
+        flag: 1, // ✅ Pastikan hanya mengambil data dengan flag = 1
+      },
+    });
+
+    res.status(200).json({ totalDefisit });
+
+  } catch (error) {
+    console.error("Error fetching total defisit:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 
 
 export const getInputDefisitById = async (req, res) => {

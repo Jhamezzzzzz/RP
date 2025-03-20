@@ -3,7 +3,8 @@ import InputRedPost from "../models/InputModel.js";
 import Excel from "exceljs";
 import Pic from "../models/PicModel.js"
 import StockData from "../models/StockDataModel.js";
-import Shift from "../models/ShiftModel.js";  
+import Shift from "../models/ShiftModel.js";
+
 
 const BATCH_SIZE = 1000; // Sesuaikan dengan kebutuhan
 //ini RedPost
@@ -81,6 +82,8 @@ export const createInputRedPost = async (req, res) => {
 
 export const updateInputRedPost = async (req, res) => {
   try {
+    const body = { ...req.body, OrderPic:""}
+    console.log("New BODY :", body)
     const inputRedPostId = req.params.id; // Ambil ID dari parameter URL
 
     // Gunakan inputRedPostId, bukan inputDateId
@@ -92,7 +95,7 @@ export const updateInputRedPost = async (req, res) => {
       return res.status(404).json({ message: "InputRedPost not found" });
     }
 
-    await InputRedPost.update(req.body, {
+    await InputRedPost.update(body, {
       where: {
         id: inputRedPostId, // Pastikan ini menggunakan inputRedPostId yang benar
         flag: 1,
@@ -255,7 +258,7 @@ export const uploadInputData = async (req, res) => {
         Soh,
         StockAct,
         PlanDelivery,
-        OrderPic: null,
+        OrderPic:"",
         Remark,
         Section,
         OrderDate: new Date(OrderDate).toLocaleDateString('en-CA'),

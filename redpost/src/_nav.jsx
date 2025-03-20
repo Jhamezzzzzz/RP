@@ -53,12 +53,12 @@ const useNav = () => {
       to: '/dashboard',
       icon: <CIcon icon={cilBarChart} customClassName="nav-icon" />,
     },
-    // {
-    //   component: CNavItem,
-    //   name: 'SOH X Defisit',
-    //   to: '/defisit-compare',
-    //   icon: <CIcon icon={cilBalanceScale} customClassName="nav-icon" />,
-    // },
+      // {
+      //   component: CNavItem,
+      //   name: 'SOH X Defisit',
+      //   to: '/defisit-compare',
+      //   icon: <CIcon icon={cilBalanceScale} customClassName="nav-icon" />,
+      // },
     {
       component: CNavTitle,
       name: 'Red-Post',
@@ -89,7 +89,7 @@ const useNav = () => {
     },
     {
       component: CNavItem,
-      name: 'Follow Up-Defisit',
+      name: 'Input Defisit',
       to: '/input-defisit',
       icon: <CIcon icon={icon.cilBookmark} customClassName="nav-icon" />,
     },

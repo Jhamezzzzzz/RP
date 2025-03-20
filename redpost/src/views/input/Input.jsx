@@ -963,7 +963,7 @@ const handlePicChange = (selected) => {
     const updatedData = { 
       ...rowData, 
       OrderDate: value, 
-      PICOrder: name // Set PIC Order sesuai user yang mengedit
+      OrderPic: name // Set PIC Order sesuai user yang mengedit
     };
 
     setItems((prevItems) =>

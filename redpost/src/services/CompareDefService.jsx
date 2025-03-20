@@ -29,12 +29,12 @@ const useCompareDefService = () => {
 
   const updateCompareDefisit = async (id,data) => {
     try {
-      const response = await axiosAutoToken.put(`/inputDefisit/${id}`, data, {
+      const response = await axiosAutoToken.put(`/update-compare/${id}`, data, {
    
       })
       return response
     } catch (error) {
-      handleError(error, 'Error put inputDefisit:')
+      handleError(error, 'Error put CompareDefisit:')
     }
   }
 

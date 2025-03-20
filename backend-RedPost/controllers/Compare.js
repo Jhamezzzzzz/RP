@@ -122,7 +122,7 @@ export const updateCompare = async (req, res) => {
         return res.status(404).json({ message: "updateCompare not found" });
       }
   
-      await InputRedPost.update(req.body, {
+      await CompareMaterial.update(req.body, {
         where: {
           id: compareMaterialId, // Pastikan ini menggunakan inputRedPostId yang benar
           flag: 1,

@@ -11,6 +11,7 @@ import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import Swal from 'sweetalert2';
 import '../../scss/_tabels.scss'
+import CreatableSelect from "react-select/creatable";
 import {
   CCard,
   CCardHeader,
@@ -68,6 +69,8 @@ import { useToast } from "../../App";
 
 const MySwal = withReactContent(Swal)
 
+
+
 const InputInventory = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'))
   const [loadingImport, setLoadingImport] = useState(false)
@@ -75,6 +78,7 @@ const InputInventory = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isClearable, setIsClearable] = useState(true)
   const [items, setItems] = useState([]) // State untuk menyimpan item yang ditambahkan
+  const [totalDefisit, setTotalDefisit] = useState() // State untuk menyimpan item yang ditambahkan
   const [modalUpload, setModalUpload] = useState(false)
   const [globalFilterValue, setGlobalFilterValue] = useState('')
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
@@ -99,7 +103,7 @@ const [editingRemark, setEditingRemark] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [qtyRec, setQtyRec] = useState(null);
   const [stockId, setStockId] = useState(null);
-  const { getInputDefisit, getInputDefisitById, postInputDefisit, updateInputDefisit, deleteInputById, getMaterial, getGic, getWbs, getMasterData,uploadInputData } = useInputDefService()
+  const { getInputDefisit,getTotalInputDefisit, getInputDefisitById, postInputDefisit, updateInputDefisit, deleteInputById, getMaterial, getGic, getWbs, getMasterData,uploadInputData } = useInputDefService()
   const { getStockData, uploadStockData,getSohData } = useStockDataService()
   const [stockData, setStockData] = useState([]);
   const [sohData, setSohData] = useState();
@@ -125,6 +129,7 @@ const [orderDate, setOrderDate] = useState(null);
 const [isEditing, setIsEditing] = useState(false);
 const [ visibleColumns, setVisibleColumns ] = useState([]);
 const [editingDateId, setEditingDateId] = useState(null);
+const [editingInDateId, setEditingInputDateId] = useState(null);
 const [toastVisible, setToastVisible] = useState(false);
 const addToast = useToast();
 const { name, roleName, imgProfile } = useVerify()
@@ -153,23 +158,28 @@ const { name, roleName, imgProfile } = useVerify()
     },
   })
 
+  const fetchTotalDef = async () => {
+    const data = await getTotalInputDefisit(selectedDate); // Jika `selectedDate` null, API akan menampilkan semua data
+    setTotalDefisit(data.totalDefisit);
+  };
   
-  
-      const fetchData = async () => {
-        try {
-          
-          const response = await getInputDefisit(); // Fetch data on mount
-          
-          setItems(response.data); // Assuming the response contains data
-        } catch (error) {
-          console.error('Failed to fetch data:', error);
-        }
-      };
-      useEffect(() => {
-        fetchData()
-      }, [])
+  useEffect(() => {
+    fetchTotalDef();
+  }, [selectedDate]); // Akan fetch ulang saat tanggal berubah
 
-    
+    const fetchData = async () => {
+      try {
+        
+        const response = await getInputDefisit(); // Fetch data on mount
+        
+        setItems(response.data); // Assuming the response contains data
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+    useEffect(() => {
+      fetchData()
+    }, [])
 
     const getInventories = async () => {
       try {
@@ -318,16 +328,16 @@ useEffect(() => {
     const data = {
       InputDate: today, // Tanggal
       MaterialNo: selectedMaterialNo?.label, // PIC yang dipilih
-      Description: selectedDescription?.label, // Shift yang dipilih
-      Address: selectedAddress?.label, // Material No yang dipilih
-      Mrp: selectedMrp?.label,
+      Description: selectedDescription?.label || "", // Bisa input manual atau kosong
+      Address: selectedAddress?.label || "", // Material No yang dipilih
+      Mrp: selectedMrp?.label || "",
       CardNo: selectedCard?.label, // Description yang dipilih
       Uom:baseUom,
       QtyReq: qtyRec, // Card No yang dipilih
       QtyUpdate:"",
       RemainQty:"",
       DefPic: "",
-      Section: selectedSection,
+      Section: selectedSection || "",
       NoGI: "", // Remark awal kosong
       OrderDate: null,
       ShiftId: selectedShift?.value, // Quantity yang dimasukkan
@@ -524,64 +534,73 @@ const saveAsExcelFile = (buffer, fileName) => {
 };
 
 
-  const handleMaterialNoChange = (selectedMaterial) => {
-    if (selectedMaterial) {
+const optionsMaterial = inventory.map((i) => ({
+  value: i.id,
+  label: i.Material.materialNo,
+}));
+const optionsDescription = inventory.map((i) => ({
+  value: i.id,
+  label: i.Material.description,
+}));
 
-      // Temukan item dari inventory berdasarkan materialNo yang dipilih
-      const selectedItem = inventory.find((item) => item.id === selectedMaterial.value)
-
-
-      if (selectedItem) {
-        // Set nilai description, address, dan uom berdasarkan item yang ditemukan
-        setSelectedMaterialNo(selectedMaterial) // Atur material yang dipilih
-        setSelectedDescription({ value: selectedItem.id, label: selectedItem.Material.description })
-        setSelectedMrp({ value: selectedItem.id, label: selectedItem.Material.mrpType })
-        setSelectedAddress({
-          value: selectedItem.id,
-          label: selectedItem.Address_Rack.addressRackName,
-        })
-        fetchPic(selectedItem.Material.materialNo)
-        // fetchSohData(selectedItem.Material.materialNo)
-        setBaseUom(selectedItem.Material.uom)
-      }
-    } else {
-      // Reset semua state jika tidak ada material yang dipilih
-      
-      setSelectedMaterialNo(null)
-      setSelectedDescription(null)
-      setSohData(null)
-      setSelectedMrp(null)
-      setSelectedAddress(null)
-    }
+const handleMaterialNoChange = (inputValue) => {
+  if (!inputValue) {
+    setSelectedMaterialNo(null);
+    setSelectedDescription(null);
+    setSelectedMrp(null);
+    setSelectedAddress(null);
+    setBaseUom(null);
+    return;
   }
 
-  const handleDescriptionChange = (selectedDescription) => {
-    if (selectedDescription) {
-      // Temukan item dari inventory berdasarkan description yang dipilih
-      const selectedItem = inventory.find((item) => item.id === selectedDescription.value)
+  // Cek apakah input sudah ada dalam inventory
+  const selectedItem = inventory.find((item) => item.Material.materialNo === inputValue.label);
 
-      if (selectedItem) {
-        // Set nilai description, address, dan uom berdasarkan item yang ditemukan
-        setSelectedDescription(selectedDescription) // Atur material yang dipilih
-        setSelectedMaterialNo({ value: selectedItem.id, label: selectedItem.Material.materialNo })
-        setSelectedAddress({
-          value: selectedItem.id,
-          label: selectedItem.Address_Rack.addressRackName,
-        })
-        setSelectedMrp({ value: selectedItem.id, label: selectedItem.Material.mrpType })
-        setConversionUom(selectedItem.Material.Packaging?.packaging)
-        setConversionRate(selectedItem.Material.Packaging?.unitPackaging)
-        setBaseUom(selectedItem.Material.uom)
-
-      }
-    } else {
-      // Reset semua state jika tidak ada material yang dipilih
-      setSelectedMaterialNo(null)
-      setSelectedDescription(null)
-      setSelectedMrp(null)
-      setSelectedAddress(null)
-    }
+  if (selectedItem) {
+    // Jika ada, set data berdasarkan item yang ditemukan
+    setSelectedMaterialNo(inputValue);
+    setSelectedDescription({ value: selectedItem.id, label: selectedItem.Material.description });
+    setSelectedMrp({ value: selectedItem.id, label: selectedItem.Material.mrpType });
+    setSelectedAddress({ value: selectedItem.id, label: selectedItem.Address_Rack.addressRackName });
+    setBaseUom(selectedItem.Material.uom);
+  } else {
+    // Jika tidak ada, simpan input baru sebagai opsi baru
+    setSelectedMaterialNo({ value: inputValue.label, label: inputValue.label });
+    setSelectedDescription(null);
+    setSelectedMrp(null);
+    setSelectedAddress(null);
+    setBaseUom(null);
   }
+};
+const handleDescriptionChange = (selectedDescription, actionMeta) => {
+  if (actionMeta.action === "create-option") {
+    // Jika input manual, simpan nilai input sebagai selectedDescription
+    setSelectedDescription({ value: selectedDescription.label, label: selectedDescription.label });
+  } else if (selectedDescription) {
+    // Jika memilih dari dropdown, cari item di inventory
+    const selectedItem = inventory.find((item) => item.id === selectedDescription.value);
+
+    if (selectedItem) {
+      setSelectedDescription(selectedDescription);
+      setSelectedMaterialNo({ value: selectedItem.id, label: selectedItem.Material.materialNo });
+      setSelectedAddress({
+        value: selectedItem.id,
+        label: selectedItem.Address_Rack.addressRackName,
+      });
+      setSelectedMrp({ value: selectedItem.id, label: selectedItem.Material.mrpType });
+      setConversionUom(selectedItem.Material.Packaging?.packaging);
+      setConversionRate(selectedItem.Material.Packaging?.unitPackaging);
+      setBaseUom(selectedItem.Material.uom);
+    }
+  } else {
+    // Jika input dikosongkan
+    setSelectedMaterialNo(null);
+    setSelectedDescription(null);
+    setSelectedMrp(null);
+    setSelectedAddress(null);
+  }
+};
+
   const customStyles = {
     container: (provided) => ({
       ...provided,
@@ -597,6 +616,27 @@ const saveAsExcelFile = (buffer, fileName) => {
       },
     }),
   };
+  const customStylesnotborder = {
+    container: (provided) => ({
+      ...provided,
+      width: "100%", // Pastikan Select tetap 100% lebarnya
+    }),
+    control: (provided, state) => ({
+      ...provided,
+      width: "100%", // Memastikan width tetap penuh
+    }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 99999,
+      position: "absolute",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 99999,
+      position: "absolute",
+    }),
+  };
+  
 
   // Sort items to show newest first
   const sortedItems = useMemo(() => {
@@ -637,7 +677,6 @@ const actionBodyTemplate = (rowData) => {
 >
   <FaTrash size={14} color="red" />
 </Button>
-
     );
 };
 
@@ -770,20 +809,33 @@ const handleSubmitRemark = async (rowData) => {
 const handleDateChangeTabel = (e) => {
   setSelectedDate(e.value);
 
-  if (e.value && e.value.length === 2) {
-    const [startDate, endDate] = e.value.map(date => format(date, 'yyyy-MM-dd'));
+  if (Array.isArray(e.value)) {
+    if (e.value.length === 2) {
+      // Jika memilih rentang (dua tanggal)
+      const [startDate, endDate] = e.value.map(date => format(date, 'yyyy-MM-dd'));
 
-    setFilters({
-      ...filters,
-      InputDate: { value: [startDate, endDate], matchMode: 'between' } // Mode "between"
-    });
+      setFilters({
+        ...filters,
+        InputDate: { value: [startDate, endDate], matchMode: 'between' } // Mode "between"
+      });
+    } else if (e.value.length === 1) {
+      // Jika hanya memilih satu tanggal
+      const selectedDate = format(e.value[0], 'yyyy-MM-dd');
+
+      setFilters({
+        ...filters,
+        InputDate: { value: selectedDate, matchMode: 'equals' } // Mode "equals" untuk satu tanggal
+      });
+    }
   } else {
+    // Jika tidak ada tanggal yang dipilih, reset filter
     setFilters({
       ...filters,
       InputDate: { value: null, matchMode: 'between' }
     });
   }
 };
+
 
 const handleCardClick = (rowData) => {
   setSelectedDialog(rowData); // Simpan data yang diklik
@@ -803,6 +855,40 @@ const handlePicChange = (selected) => {
     setSelectedShift(shift || null);
   } else {
     setSelectedShift(null);
+  }
+};
+const handleInputDate = (date, rowData) => {
+  setItems((prevItems) =>
+    prevItems.map((item) =>
+      item.id === rowData.id 
+        ? { ...item, InputDate: date } // Perbarui state lokal
+        : item
+    )
+  );
+};
+
+const handleSubmitInputDate = async (rowData) => {
+  if (!rowData.InputDate) return; // Cegah update jika InputDate kosong
+
+  const updatedData = { 
+    InputDate: rowData.InputDate 
+  };
+
+  try {
+    await updateInputDefisit(rowData.id, updatedData);
+
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === rowData.id
+          ? { ...item, InputDate: rowData.InputDate }
+          : item
+      )
+    );
+
+    // Tampilkan toast sukses
+    addToast("Success, Updated GI Date", "success", "info");
+  } catch (error) {
+    console.error("Error updating GI Date: ", error);
   }
 };
 
@@ -832,7 +918,7 @@ const handleSubmitDateOrder = async (rowData) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === rowData.id 
-          ? { ...item, OrderDate: rowData.OrderDate, DefPic: name,NoGI:rowData.NoGI} 
+          ? { ...item, OrderDate: rowData.OrderDate, DefPic: name} 
           : item
       )
     );
@@ -842,6 +928,9 @@ const handleSubmitDateOrder = async (rowData) => {
     console.error("Error updating Order Date & Def PIC: ", error);
   }
 };
+
+
+
 
 
   return (
@@ -861,35 +950,50 @@ const handleSubmitDateOrder = async (rowData) => {
                     Material No
                   </CFormLabel>
                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                   <Select
-                     className="basic-single"
-                     classNamePrefix="select"
-                     isLoading={isLoading}
-                      isClearable={isClearable}
-                      options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                       (i) => ({
-                         value: i.id,
-                         label: i.Material.materialNo,
-                       }),
-                     )}
-                     id="materialNo"
-                     onChange={handleMaterialNoChange}
-                     value={selectedMaterialNo}
-                     styles={customStyles}
-                   />
+                   <CreatableSelect
+                    className="basic-single"
+                    classNamePrefix="select"
+                    isLoading={isLoading}
+                    options={optionsMaterial}
+                    isClearable={isClearable}
+                    id="materialNo"
+                    onChange={handleMaterialNoChange}
+                    value={selectedMaterialNo}
+                    styles={customStyles}
+                    placeholder="Input Material No"
+                    isValidNewOption={(inputValue, selectValue, selectOptions) =>
+                      !selectOptions.some((option) => option.label === inputValue)
+                    }
+                  />
+               
                     </CInputGroup>
                  </CCol>
                   <CCol xs={12} sm={6} md={4} xl={5} >
                     <CFormLabel htmlFor="description" style={{ fontSize: '13px' }}>
                       Description
                     </CFormLabel>
-                    <Select
+                    <CreatableSelect
+                    className="basic-single"
+                    classNamePrefix="select"
+                    isLoading={isLoading}
+                    options={optionsDescription}
+                    isClearable={isClearable}
+                    id="materialNo"
+                    onChange={handleDescriptionChange}
+                    value={selectedDescription}
+                    styles={customStylesnotborder}
+                    placeholder="Please select Material No first"
+                    isValidNewOption={(inputValue, selectValue, selectOptions) =>
+                      !selectOptions.some((option) => option.label === inputValue)
+                    }
+                  />
+                    {/* <Select
                     className="basic-single"
                     classNamePrefix="Select Material No"
                     isLoading={isLoading}
                      placeholder="Select Material.."
                     isClearable={isClearable}
-                    isDisabled={true}
+                    isDisabled={!selectedMaterialNo?.label?.endsWith(".")} // Enable jika ada titik di akhir
                     options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
                       (i) => ({
                         value: i.id,
@@ -899,7 +1003,7 @@ const handleSubmitDateOrder = async (rowData) => {
                     id="description"
                     onChange={handleDescriptionChange}
                     value={selectedDescription}
-                  />
+                  /> */}
                   {/* <CFormInput
                     type="text"
                     id="description"
@@ -990,7 +1094,26 @@ const handleSubmitDateOrder = async (rowData) => {
                          ID Card
                        </CFormLabel>
                        <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                       <Select
+                       <CreatableSelect
+                          className="basic-single"
+                          classNamePrefix="select"
+                          isLoading={isLoading}
+                          options={cardOptions}
+                          isClearable={isClearable}
+                          isDisabled={!selectedMaterialNo}
+                          id="materialNo"
+                          onChange={(selected) => {
+                            setSelectedCard(selected);
+                            setSelectedSection(selected ? selected.sectionName : ""); // Pastikan sectionName muncul di input Section
+                          }}
+                          value={selectedCard}
+                          styles={customStylesnotborder}
+                          placeholder="Please Select Card No"
+                          isValidNewOption={(inputValue, selectValue, selectOptions) =>
+                            !selectOptions.some((option) => option.label === inputValue)
+                          }
+                        />
+                       {/* <Select
                             className="basic-single"
                             classNamePrefix="select"
                             isClearable={isClearable}
@@ -1008,7 +1131,7 @@ const handleSubmitDateOrder = async (rowData) => {
                             }}
                             menuPortalTarget={document.body}
                             isDisabled={!selectedMaterialNo}
-                          />
+                          /> */}
                        </CInputGroup>
                      </CCol>
                      <CCol xs={12} sm={6} md={5} xl={3}  className="mt-1">
@@ -1019,7 +1142,7 @@ const handleSubmitDateOrder = async (rowData) => {
                     <CFormInput
                       type="text"
                       id="section"
-                      placeholder="Select Card No.."
+                      placeholder="Select Material.."
                       value={selectedSection}
                       disabled={!selectedMaterialNo}
                     />
@@ -1171,7 +1294,12 @@ const handleSubmitDateOrder = async (rowData) => {
                   </div>
                 </CCol>
               </CRow>
-              <CRow className="mt-4">
+              <CRow>
+                <span className='fw-bold fs-6 fst-italic'>
+                 Total Defisit: {totalDefisit !== null ? `${totalDefisit} item` : "Loading..."}
+               </span>     
+              </CRow>
+              <CRow className="mt-3">
                 <div
                   style={{
                     overflowX: 'auto', // Membuat tabel bisa digeser horizontal
@@ -1197,13 +1325,24 @@ const handleSubmitDateOrder = async (rowData) => {
                       scrollDirection="horizontal"
                     >
                         <Column className='' header="No" body={(rowBody, { rowIndex }) => rowIndex + 1}></Column>
-                      <Column field="InputDate" header="Date" 
-                      sortable
-                      frozen alignFrozen="left"
-                      style={{ whiteSpace: 'nowrap', minWidth: '40px' }}  />
+                        <Column
+                          field="InputDate"
+                          header="GI Date"
+                          body={(rowData) => (
+                            <input
+                              type="date"
+                              value={rowData.InputDate || ""}
+                              onChange={(e) => handleInputDate(e.target.value, rowData)}
+                              onBlur={() => handleSubmitInputDate(rowData)} // Update ke database saat blur
+                              style={{ flexGrow: 1, border: "none", outline: "none" }}
+                              disabled={!(roleName === "group head" || roleName === "super admin")}
+                            />
+                          )}
+                        />
                       <Column 
                       field="ShiftId" 
                       header="Shift" 
+                      sortable
                         frozen alignFrozen="left"
                       
                       body={(rowData) => (
@@ -1216,7 +1355,7 @@ const handleSubmitDateOrder = async (rowData) => {
                       style={{ whiteSpace: 'nowrap', minWidth: '85px' }}/>
                       <Column field="Description" header="Description" 
                       style={{ whiteSpace: 'nowrap'}}/>
-                    <Column 
+                    {/* <Column 
                         field="Pic" 
                         header="PIC"  
                         style={{ whiteSpace: 'nowrap' }} 
@@ -1225,7 +1364,7 @@ const handleSubmitDateOrder = async (rowData) => {
                           {picOptions?.find(pic => pic.value === rowData.PicId)?.label || ""}
                         </span>                         
                         )} 
-                      />
+                      /> */}
                       <Column field="Address" header="Address" />
                       <Column 
                           field="CardNo" 
@@ -1250,49 +1389,7 @@ const handleSubmitDateOrder = async (rowData) => {
                       field="QtyReq" 
                       header="Qty GI"
                         />
-                    {/* <Column 
-                      field="Soh" 
-                      header="Stock Act" 
-                      body={() => (
-                        <div style={{ textAlign: 'center', fontWeight: 'bold', color: 'red' }}>
-                          0
-                        </div>
-                      )}
-                    /> */}
-                    <Column 
-                        field="OrderDate" 
-                        header="GI Input"
-                        body={(rowData) => (
-                          <input
-                            type="date"
-                            value={rowData.OrderDate || ""}
-                            onChange={(e) => handleDateOrder(e.target.value, rowData)}
-                            onFocus={() => setEditingDateId(rowData.id)}
-                            onBlur={() => setTimeout(() => setEditingDateId(null), 200)}
-                            placeholder="Silakan isi"
-                            style={{ flexGrow: 1, border: "none", outline: "none" }}
-                            disabled={!(roleName === "group head" || roleName === "super admin")}
-                          />
-                        )}
-                      />
-                <Column 
-                  field="DefPic" 
-                  header="PIC GI"
-                  body={(rowData) => (
-                    <div 
-                      style={{ 
-                        padding: "5px", 
-                        background: "#f9f9f9", 
-                        borderRadius: "4px",
-                        textAlign: "center"
-                      }}
-                    >
-                      {rowData.DefPic || "-"} 
-                    </div>
-                  )}
-                />
-    
-                <Column
+                    <Column
               field="NoGI"
               header="GI Number"
               body={(rowData) => (
@@ -1313,6 +1410,7 @@ const handleSubmitDateOrder = async (rowData) => {
                         type="text" 
                         value={rowData.NoGI || ""} 
                         onChange={(e) => handleRemarkChange(rowData.id, e.target.value)}
+                        onBlur={() => handleSubmitRemark(rowData)} // Update ke database saat blur
                         style={{ 
                           flexGrow: 1, 
                           border: "none", 
@@ -1336,12 +1434,47 @@ const handleSubmitDateOrder = async (rowData) => {
                       }}
                       title={rowData.NoGI} 
                     >
-                      {rowData.NoGI && rowData.NoGI.trim() ? rowData.NoGI : "...."}
-                    </span>
+                        {rowData.NoGI && rowData.NoGI.trim() ? rowData.NoGI : "...."}
+                      </span>
+                    )}
+                     </div>
+                    )}
+                    />
+                    <Column 
+                        field="OrderDate" 
+                        header="GI Input"
+                        body={(rowData) => (
+                          <input
+                            type="date"
+                            value={rowData.OrderDate || ""}
+                            onChange={(e) => handleDateOrder(e.target.value, rowData)}
+                            onFocus={() => setEditingDateId(rowData.id)}
+                            onBlur={() => setTimeout(() => setEditingDateId(null), 200)}
+                            placeholder="Silakan isi"
+                            style={{ flexGrow: 1, border: "none", outline: "none" }}
+                            disabled={!(roleName === "group head" || roleName === "super admin")}
+                          />
+                        )}
+                      />
+                <Column 
+                  field="DefPic" 
+                  header="PIC GI"
+                  className="highlight-border"
+                  body={(rowData) => (
+                    <div 
+                      style={{ 
+                        padding: "5px", 
+                        background: "#f9f9f9", 
+                        borderRadius: "4px",
+                        textAlign: "center"
+                      }}
+                    >
+                      {rowData.DefPic || ""} 
+                    </div>
                   )}
-                </div>
-              )}
-              />
+                />
+    
+              
              <Column 
               header="Action"
               body={(rowData) => {
@@ -1367,6 +1500,7 @@ const handleSubmitDateOrder = async (rowData) => {
                   />
                   <Column 
                   header="Status"
+                  className="highlight-border"
                   body={(rowData) => {
                     const isCompleted = rowData.OrderDate && rowData.DefPic; // Cek apakah OrderDate & DefPic sudah diisi
                     return (
