@@ -373,6 +373,8 @@ useEffect(() => {
         setStockId(null);
         setSohData("");
         setBaseUom("");
+
+        addToast("Success, Input Defisit", "success", "info");
       }
     } catch (error) {
       console.error("Error adding data: ", error);

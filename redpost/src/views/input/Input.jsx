@@ -61,6 +61,7 @@ import { FaPencilAlt,FaTrash,FaCheck } from "react-icons/fa"; // ? Benar
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle, faExclamationTriangle,faPencilAlt,faCheck,faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { MultiSelect } from 'primereact/multiselect';
+import { useToast } from "../../App";
 
 const MySwal = withReactContent(Swal)
 
@@ -122,6 +123,7 @@ const [isEditing, setIsEditing] = useState(false);
 const [ visibleColumns, setVisibleColumns ] = useState([]);
 const [editingDateId, setEditingDateId] = useState(null);
 const { name, roleName, imgProfile } = useVerify()
+const addToast = useToast();
   
     const apiSection = 'section-public'
    const apiWbs = 'wbs-public'
@@ -474,6 +476,8 @@ useEffect(() => {
         setStockId(null);
         setSohData("");
         setBaseUom("");
+
+        addToast("Success ,Input Red Post", "success", "info");
       }
     } catch (error) {
       console.error("Error adding data: ", error);
@@ -741,13 +745,6 @@ const onRowEditComplete = async (e) => {
   }
 };
 
-
-
-
-const mrpBodyTemplate = (rowData) => {
-    return rowData.Mrp === 'NQC' ? <Tag severity="danger" value={rowData.Mrp} /> : rowData.Mrp;
-};
-
 const actionBodyTemplate = (rowData) => {
     return (
 <Button 
@@ -797,7 +794,9 @@ const handleSubmitQty = async (itemId) => {
       prevItems.map((item) =>
         item.id === itemId ? { ...item, QtyReq: updatedItem.QtyReq } : item
       )
+     
     );
+    addToast("Success ,Update Qty Red-Post", "success", "info");
   } catch (error) {
     console.error("Error updating or adding data:", error);
   }
@@ -913,6 +912,7 @@ const handleSubmitRemark = async (rowData) => {
   try {
     await updateInput(rowData.id, updatedData);
     console.log("Remark updated:", updatedData);
+    addToast("Success ,Update Remark", "success", "info");
   } catch (error) {
     console.error("Error updating remark: ", error);
   }
@@ -995,7 +995,7 @@ const handleSubmitDateOrder = async (rowData) => {
 
     // Setelah Order Date diubah, update juga OrderPic
     handleSubmitOrderPic(rowData); // Panggil fungsi terpisah untuk OrderPic
-
+    addToast("Success ,Update Date Plan Delivery", "success", "info");
   } catch (error) {
     console.error("Error updating Order Date: ", error);
   }
