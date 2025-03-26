@@ -3,47 +3,41 @@ import { useSelector, useDispatch } from 'react-redux'
 
 import {
   CCloseButton,
+  CImage,
   CSidebar,
   CSidebarBrand,
   CSidebarFooter,
   CSidebarHeader,
   CSidebarToggler,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import useNav from '../_nav'
 
 import { AppSidebarNav } from './AppSidebarNav'
-
-import logo from 'src/assets/images/TWIIS-NEW.png'
-import sygnet from 'src/assets/images/RedIcon.png'
+import LogoTWIIS from 'src/assets/images/logo-twiis.png'
 
 // sidebar nav config
+// import navigation from '../_nav'
+import useNavigation from '../_nav'
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
-  const _nav = useNav()
+  const _nav = useNavigation()
 
   return (
     <CSidebar
-    className="border-end"
-    position="fixed"
-    unfoldable={unfoldable}
-    visible={sidebarShow}
-    onVisibleChange={(visible) => {
-      dispatch({ type: 'set', sidebarShow: visible });
-    }}
-    style={{
-      backgroundColor: '#E9EFEC ', // Warna abu-abu
-      color: '#F5F5F7',            // Warna teks
-    }}
-  >
-  
+      className="border-end"
+      colorScheme="dark"
+      position="fixed"
+      unfoldable={unfoldable}
+      visible={sidebarShow}
+      onVisibleChange={(visible) => {
+        dispatch({ type: 'set', sidebarShow: visible })
+      }}
+    >
       <CSidebarHeader className="border-bottom">
-        <CSidebarBrand to="/">
-        <img src={logo} alt="Logo" className="sidebar-brand-full" height={50} />
-        <img src={sygnet} alt="Sygnet" className="sidebar-brand-narrow" height={30} />
+        <CSidebarBrand to="/" className="d-flex justify-content-start">
+          <CImage className="w-50 sidebar-narrow d-flex h-50" src={LogoTWIIS} height={52} />
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

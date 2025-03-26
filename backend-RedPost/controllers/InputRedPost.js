@@ -82,7 +82,7 @@ export const createInputRedPost = async (req, res) => {
 
 export const updateInputRedPost = async (req, res) => {
   try {
-    const body = { ...req.body, OrderPic:""}
+    const body = { ...req.body, OrderPic: req.body.PICOrder ? req.body.PICOrder : ""}
     console.log("New BODY :", body)
     const inputRedPostId = req.params.id; // Ambil ID dari parameter URL
 
@@ -108,6 +108,7 @@ export const updateInputRedPost = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 export const deleteInputRedPost = async (req, res) => {

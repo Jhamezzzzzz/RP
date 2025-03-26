@@ -472,7 +472,7 @@ const handlePicChange = (selected) => {
 const statusBodyTemplate = (rowData) => {
   if (rowData.Soh > 0 && rowData.Defisit > 0) {
       return (
-          <CTooltip content="Check IWMS" placement="top">
+          <CTooltip content="Input Please" placement="top">
               <span>
                   <FaCheckCircle style={{ color: "green", fontSize: "20px", cursor: "pointer" }} />
               </span>
@@ -480,7 +480,7 @@ const statusBodyTemplate = (rowData) => {
       );
   } else if (rowData.Soh > 0 || rowData.Defisit > 0) {
       return (
-          <CTooltip content="Check GI" placement="top">
+          <CTooltip content="Genba Please" placement="top">
               <span>
                   <FaExclamationTriangle style={{ color: "orange", fontSize: "20px", cursor: "pointer" }} />
               </span>
@@ -566,7 +566,8 @@ const statusBodyTemplate = (rowData) => {
                       sortable
                       frozen alignFrozen="left"
                       style={{ whiteSpace: 'nowrap', minWidth: '40px' }}  /> */}
-                     
+                       <Column field="InputDate" header="Last Defisit Date" 
+                      style={{ whiteSpace: 'nowrap', minWidth: '85px' }}/>
                       <Column field="MaterialNo" header="Material No" 
                       style={{ whiteSpace: 'nowrap', minWidth: '85px' }}/>
                       <Column field="Description" header="Description" 
@@ -580,7 +581,7 @@ const statusBodyTemplate = (rowData) => {
                       />
                      <Column 
                           field="Soh" 
-                          header="Count SoH"
+                          header="SoH"
                           body={(rowData) => (
                               <span style={{ fontWeight: "bold", color: "#FE4F2D" }}>
                                   {rowData.Soh}
@@ -590,7 +591,7 @@ const statusBodyTemplate = (rowData) => {
 
                       <Column 
                           field="Defisit" 
-                          header="Count Defisit"
+                          header="Defisit"
                           body={(rowData) => (
                               <span style={{ fontWeight: "bold", color: "#FF6500" }}>
                                   {rowData.Defisit}

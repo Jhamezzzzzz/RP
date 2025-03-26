@@ -66,6 +66,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle, faExclamationTriangle,faPencilAlt,faCircleCheck,faTimesCircle,faCheck,faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { MultiSelect } from 'primereact/multiselect';
 import { useToast } from "../../App";
+import { set } from 'lodash'
 
 const MySwal = withReactContent(Swal)
 
@@ -102,6 +103,7 @@ const [editingRemark, setEditingRemark] = useState(null);
   const [selectedShift, setSelectedShift] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [qtyRec, setQtyRec] = useState(null);
+  const [headtext, setHeadtext] = useState(null);
   const [stockId, setStockId] = useState(null);
   const { getInputDefisit,getTotalInputDefisit, getInputDefisitById, postInputDefisit, updateInputDefisit, deleteInputById, getMaterial, getGic, getWbs, getMasterData,uploadInputData } = useInputDefService()
   const { getStockData, uploadStockData,getSohData } = useStockDataService()
@@ -338,7 +340,7 @@ useEffect(() => {
       RemainQty:"",
       DefPic: "",
       Section: selectedSection || "",
-      NoGI: "", // Remark awal kosong
+      NoGI: headtext, // Remark awal kosong
       OrderDate: null,
       ShiftId: selectedShift?.value, // Quantity yang dimasukkan
       PicId : selectedPic?.value,
@@ -367,6 +369,7 @@ useEffect(() => {
         setSelectedCard(null);
         setSelectedSection(null);
         setQtyRec("");
+        setHeadtext("");
         setStockId(null);
         setSohData("");
         setBaseUom("");
@@ -678,6 +681,10 @@ const actionBodyTemplate = (rowData) => {
   <FaTrash size={14} color="red" />
 </Button>
     );
+};
+const handleHeaderText = (e) => {
+  const value = e.target.value; // Extract the value from the event
+  setHeadtext(value); // Set the value as state
 };
 
 const handleQtyChange = (e) => {
@@ -1208,6 +1215,24 @@ const handleSubmitDateOrder = async (rowData) => {
                       min="0" // Mencegah angka negatif
                     />
                   </CCol>
+                  <CCol xs={12} sm={6} md={3} xl={2} className="mt-1">
+                    <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
+                    Header Text
+                    </CFormLabel>
+                    <CFormInput
+                      type="text"
+                      placeholder="Input Please"
+                      text="Must be number."
+ 
+                      required
+                      inputMode="numeric"
+                      value={headtext}
+                      onChange={handleHeaderText} 
+                      autoComplete="off"
+                      disabled={!selectedMaterialNo}
+                      min="0" // Mencegah angka negatif
+                    />
+                  </CCol>
                   {/* <CCol xs={12} sm={5} md={3} xl={2} className="mt-1">
                       <CFormLabel htmlFor="soh" style={{ fontSize: "13px" }}>
                         {` SOH  (${baseUom})`}
@@ -1391,7 +1416,7 @@ const handleSubmitDateOrder = async (rowData) => {
                         />
                     <Column
               field="NoGI"
-              header="GI Number"
+              header="Header Text"
               body={(rowData) => (
                 <div 
                   style={{ 

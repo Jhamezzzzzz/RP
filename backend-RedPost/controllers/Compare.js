@@ -6,107 +6,125 @@ import CompareMaterial from "../models/CompareModel.js";
 const { Op } = Sequelize;
 
 export const getCompare = async (req, res) => {
-  let { startDate, endDate } = req.query;
-
-  // Jika startDate atau endDate kosong, ambil semua data tanpa filter tanggal
-  const dateFilter = startDate && endDate ? { InputDate: { [Op.between]: [startDate, endDate] } } : {};
-
-  try {
-    // 1️⃣ Ambil semua MaterialNo unik dari InputRedPost
-    const uniqueMaterialsRedPost = await InputRedPost.findAll({
-        attributes: [
-            [Sequelize.fn("DISTINCT", Sequelize.col("MaterialNo")), "MaterialNo"],
-            "Description", 
-            "Uom",
-            "Address"
-        ],
-        where: {
-            ...dateFilter, // ✅ Gunakan filter tanggal jika ada
-            flag: 1,
-        },
-        raw: true,
-    });
-
-    // 2️⃣ Ambil semua MaterialNo unik dari InputDefisit
-    const uniqueMaterialsDefisit = await InputDefisit.findAll({
-        attributes: [
-            [Sequelize.fn("DISTINCT", Sequelize.col("MaterialNo")), "MaterialNo"],
-            "Description", 
-            "Uom",
-            "Address"
-        ],
-        where: {
-            ...dateFilter, // ✅ Gunakan filter tanggal jika ada
-            flag: 1,
-        },
-        raw: true,
-    });
-
-    // 3️⃣ Gabungkan MaterialNo dari InputRedPost & InputDefisit (tanpa duplikat)
-    const materialNos = [
-        ...new Set([
-            ...uniqueMaterialsRedPost.map(item => item.MaterialNo),
-            ...uniqueMaterialsDefisit.map(item => item.MaterialNo)
-        ])
-    ];
-
-    // 4️⃣ Hitung jumlah SOH di InputRedPost
-    const sohCounts = await InputRedPost.findAll({
-        attributes: [
-            "MaterialNo",
-            [Sequelize.fn("COUNT", Sequelize.col("MaterialNo")), "sohCount"]
-        ],
-        where: {
-            MaterialNo: { [Op.in]: materialNos },
-            ...dateFilter, // ✅ Gunakan filter tanggal jika ada
-            flag: 1,
-        },
-        group: ["MaterialNo"],
-        raw: true,
-    });
-
-    // 5️⃣ Hitung jumlah Defisit di InputDefisit
-    const defisitCounts = await InputDefisit.findAll({
-        attributes: [
-            "MaterialNo",
-            [Sequelize.fn("COUNT", Sequelize.col("MaterialNo")), "defisitCount"]
-        ],
-        where: {
-            MaterialNo: { [Op.in]: materialNos },
-            ...dateFilter, // ✅ Gunakan filter tanggal jika ada
-            flag: 1,
-        },
-        group: ["MaterialNo"],
-        raw: true,
-    });
-
-    // 6️⃣ Gabungkan semua data menjadi satu response
-    const responseData = materialNos.map(material => {
-        const sohEntry = sohCounts.find(item => item.MaterialNo === material);
-        const defisitEntry = defisitCounts.find(item => item.MaterialNo === material);
-        
-        // Cek data dari InputRedPost dulu, jika tidak ada cari di InputDefisit
-        const materialInfo = 
-            uniqueMaterialsRedPost.find(item => item.MaterialNo === material) || 
-            uniqueMaterialsDefisit.find(item => item.MaterialNo === material);
-
-        return {
-            MaterialNo: material,
-            Description: materialInfo ? materialInfo.Description : "", // Jika tidak ditemukan, kosongkan
-            Uom: materialInfo ? materialInfo.Uom : "", // Jika tidak ditemukan, kosongkan
-            Address: materialInfo ? materialInfo.Address : "", // ✅ Ambil Address jika ada
-            Soh: sohEntry ? sohEntry.sohCount : 0, // Jika tidak ditemukan, set ke 0
-            Defisit: defisitEntry ? defisitEntry.defisitCount : 0, // Jika tidak ditemukan, set ke 0
-        };
-    });
-
-    res.status(200).json(responseData);
-
-} catch (error) {
-    console.error("Error fetching compare data:", error);
-    res.status(500).json({ message: "Internal server error" });
-}
-};
+    let { startDate, endDate } = req.query;
+  
+    // Jika startDate atau endDate kosong, ambil semua data tanpa filter tanggal
+    const dateFilter = startDate && endDate ? { InputDate: { [Op.between]: [startDate, endDate] } } : {};
+  
+    try {
+      // 1️⃣ Ambil semua MaterialNo unik dari InputRedPost
+      const uniqueMaterialsRedPost = await InputRedPost.findAll({
+          attributes: [
+              [Sequelize.fn("DISTINCT", Sequelize.col("MaterialNo")), "MaterialNo"],
+              "Description", 
+              "Uom",
+              "Address"
+          ],
+          where: {
+              ...dateFilter, 
+              flag: 1,
+          },
+          raw: true,
+      });
+  
+      // 2️⃣ Ambil semua MaterialNo unik dari InputDefisit
+      const uniqueMaterialsDefisit = await InputDefisit.findAll({
+          attributes: [
+              [Sequelize.fn("DISTINCT", Sequelize.col("MaterialNo")), "MaterialNo"],
+              "Description", 
+              "Uom",
+              "Address"
+          ],
+          where: {
+              ...dateFilter, 
+              flag: 1,
+          },
+          raw: true,
+      });
+  
+      // 3️⃣ Gabungkan MaterialNo dari InputRedPost & InputDefisit (tanpa duplikat)
+      const materialNos = [
+          ...new Set([
+              ...uniqueMaterialsRedPost.map(item => item.MaterialNo),
+              ...uniqueMaterialsDefisit.map(item => item.MaterialNo)
+          ])
+      ];
+  
+      // 4️⃣ Hitung jumlah SOH di InputRedPost
+      const sohCounts = await InputRedPost.findAll({
+          attributes: [
+              "MaterialNo",
+              [Sequelize.fn("COUNT", Sequelize.col("MaterialNo")), "sohCount"]
+          ],
+          where: {
+              MaterialNo: { [Op.in]: materialNos },
+              ...dateFilter, 
+              flag: 1,
+          },
+          group: ["MaterialNo"],
+          raw: true,
+      });
+  
+      // 5️⃣ Hitung jumlah Defisit di InputDefisit
+      const defisitCounts = await InputDefisit.findAll({
+          attributes: [
+              "MaterialNo",
+              [Sequelize.fn("COUNT", Sequelize.col("MaterialNo")), "defisitCount"]
+          ],
+          where: {
+              MaterialNo: { [Op.in]: materialNos },
+              ...dateFilter, 
+              flag: 1,
+          },
+          group: ["MaterialNo"],
+          raw: true,
+      });
+  
+      // 6️⃣ Ambil InputDate terakhir dari InputDefisit untuk setiap MaterialNo
+      const lastInputDates = await InputDefisit.findAll({
+          attributes: [
+              "MaterialNo",
+              [Sequelize.fn("MAX", Sequelize.col("InputDate")), "lastInputDate"] // ✅ Ambil tanggal terakhir
+          ],
+          where: {
+              MaterialNo: { [Op.in]: materialNos },
+              ...dateFilter, 
+              flag: 1,
+          },
+          group: ["MaterialNo"],
+          raw: true,
+      });
+  
+      // 7️⃣ Gabungkan semua data menjadi satu response
+      const responseData = materialNos.map(material => {
+          const sohEntry = sohCounts.find(item => item.MaterialNo === material);
+          const defisitEntry = defisitCounts.find(item => item.MaterialNo === material);
+          const lastInputDateEntry = lastInputDates.find(item => item.MaterialNo === material);
+          
+          // Cek data dari InputRedPost dulu, jika tidak ada cari di InputDefisit
+          const materialInfo = 
+              uniqueMaterialsRedPost.find(item => item.MaterialNo === material) || 
+              uniqueMaterialsDefisit.find(item => item.MaterialNo === material);
+  
+          return {
+              MaterialNo: material,
+              Description: materialInfo ? materialInfo.Description : "", 
+              Uom: materialInfo ? materialInfo.Uom : "", 
+              Address: materialInfo ? materialInfo.Address : "", 
+              Soh: sohEntry ? sohEntry.sohCount : 0, 
+              Defisit: defisitEntry ? defisitEntry.defisitCount : 0, 
+              InputDate: lastInputDateEntry ? lastInputDateEntry.lastInputDate : null // ✅ Gunakan InputDate terakhir
+          };
+      });
+  
+      res.status(200).json(responseData);
+  
+  } catch (error) {
+      console.error("Error fetching compare data:", error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+  };
+  
   
 
 export const updateCompare = async (req, res) => {
