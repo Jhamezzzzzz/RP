@@ -1400,6 +1400,7 @@ const header = () => (
                       scrollHeight="900px"
                       scrollDirection="horizontal"
                     >
+                    <Column className='' header="No" body={(rowBody, { rowIndex }) => rowIndex + 1}></Column>
                       <Column field="InputDate" header="Date" 
                       sortable
                       frozen alignFrozen="left"

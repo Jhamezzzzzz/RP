@@ -543,11 +543,14 @@ const statusBodyTemplate = (rowData) => {
                   }}
                 >
                   <DataTable 
-                      value={items} 
+                      value={[...items].sort((a, b) => {
+                      if (!a.InputDate) return 1;  // Jika `a` kosong, taruh ke bawah
+                      if (!b.InputDate) return -1; // Jika `b` kosong, `a` tetap di atas
+                      return new Date(b.InputDate) - new Date(a.InputDate); // Urutkan terbaru ke lama
+                      })} 
                       sortField={sortField} 
                       sortOrder={sortOrder} 
                       onSort={onSort}
-                      // header={header}
                       paginator 
                       rowsPerPageOptions={[12, 50, 100, 500]}
                       rows={12}

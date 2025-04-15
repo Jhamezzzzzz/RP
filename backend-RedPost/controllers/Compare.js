@@ -32,7 +32,6 @@ export const getCompare = async (req, res) => {
           attributes: [
               [Sequelize.fn("DISTINCT", Sequelize.col("MaterialNo")), "MaterialNo"],
               "Description", 
-              "Uom",
               "Address"
           ],
           where: {

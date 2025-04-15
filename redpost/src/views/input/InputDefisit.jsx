@@ -1351,7 +1351,12 @@ const handleSubmitDateOrder = async (rowData) => {
                       scrollHeight="900px"
                       scrollDirection="horizontal"
                     >
-                        <Column className='' header="No" body={(rowBody, { rowIndex }) => rowIndex + 1}></Column>
+                        <Column
+                        className=""
+                        header="No"
+                        body={(rowData, { rowIndex }) => items.length - rowIndex}>
+                      </Column>
+
                         <Column
                           field="InputDate"
                           header="GI Date"
@@ -1417,19 +1422,19 @@ const handleSubmitDateOrder = async (rowData) => {
                       header="Qty GI"
                         />
                     <Column
-              field="NoGI"
-              header="Header Text"
-              body={(rowData) => (
-                <div 
-                  style={{ 
-                    display: "flex", 
-                    alignItems: "center", 
-                    background: "white", 
-                    padding: "5px", 
-                    borderRadius: "4px", 
-                    justifyContent: "space-between",
-                    maxWidth: "130px",
-                  }}
+                    field="NoGI"
+                    header="Header Text"
+                    body={(rowData) => (
+                      <div 
+                        style={{ 
+                          display: "flex", 
+                          alignItems: "center", 
+                          background: "white", 
+                          padding: "5px", 
+                          borderRadius: "4px", 
+                          justifyContent: "space-between",
+                          maxWidth: "130px",
+                        }}
                 >
                   {(roleName === "group head" || roleName === "super admin") ? (
                     <>
