@@ -539,7 +539,7 @@ const handleCardClick = (rowData) => {
                   rowClassName={(rowData) => selectedRows.includes(rowData.id) ? "selected-row" : ""}
                   onRowClick={(e) => handleRowClick(e.data)} // Klik untuk toggle
                 >
-
+                  <Column className='' header="No" body={(rowBody, { rowIndex }) => rowIndex + 1}></Column>
                   <Column field="InputDate" header="Date" 
                     sortable
                     frozen alignFrozen="left"

@@ -1,7 +1,7 @@
 import React, { Suspense, useState, useEffect, createContext, useContext } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { CSpinner, useColorModes, CToaster, CToast, CToastHeader, CToastBody } from '@coreui/react'
-import Watermark from './components/Watermark'
+// import Watermark from './components/Watermark'
 import './scss/style.scss'
 
 import './scss/examples.scss'
@@ -93,7 +93,7 @@ const App = () => {
             </CToast>
           ))}
         </CToaster>
-        <Watermark/>
+        {/* <Watermark/> */}
         <Suspense>
           <Routes>
             <Route exact path="/login" name="Login Page" element={<Login />} />

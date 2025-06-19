@@ -74,92 +74,85 @@ const MySwal = withReactContent(Swal)
 
 const InputInventory = () => {
   const [date, setDate] = useState(new Date().toLocaleDateString('en-CA'))
-  const [loadingImport, setLoadingImport] = useState(false)
   const [isFormVisible, setIsFormVisible] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isClearable, setIsClearable] = useState(true)
   const [items, setItems] = useState([]) // State untuk menyimpan item yang ditambahkan
   const [totalDefisit, setTotalDefisit] = useState() // State untuk menyimpan item yang ditambahkan
-  const [modalUpload, setModalUpload] = useState(false)
   const [globalFilterValue, setGlobalFilterValue] = useState('')
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
   const itemsPerPage = 20
-  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false)
   const [inventory, setInventory] = useState([])
-  const [filteredInventory, setFilteredInventory] = useState([])
   const [selectedMrp, setSelectedMrp] = useState([])
   const [selectedMaterialNo, setSelectedMaterialNo] = useState(null)
-  const [searchTerm, setSearchTerm] = useState('') // Menyimpan input pengguna
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedDescription, setSelectedDescription] = useState(null)
   const [selectedAddress, setSelectedAddress] = useState(null)
+  const [costcenter, setCostcenter] = useState(null)
   const [conversionUom, setConversionUom] = useState('')
   const [baseUom, setBaseUom] = useState('')
   const [isWbs, setIsWbs] = useState(false);
   const [cardOptions, setCardOptions] = useState([]);
   const [picOptions, setPicOptions] = useState([]);
   const [shiftOptions, setShiftOptions] = useState([]);
-const [editingRemark, setEditingRemark] = useState(null);
   const [selectedShift, setSelectedShift] = useState(null);
   const [selectedCard, setSelectedCard] = useState(null);
   const [qtyRec, setQtyRec] = useState(null);
   const [headtext, setHeadtext] = useState(null);
   const [stockId, setStockId] = useState(null);
   const { getInputDefisit,getTotalInputDefisit, getInputDefisitById, postInputDefisit, updateInputDefisit, deleteInputById, getMaterial, getGic, getWbs, getMasterData,uploadInputData } = useInputDefService()
-  const { getStockData, uploadStockData,getSohData } = useStockDataService()
-  const [stockData, setStockData] = useState([]);
   const [sohData, setSohData] = useState();
-  const [selectedSoh, setSelectedSoh] = useState(null);
   const [isEditable, setIsEditable] = useState(false); // To toggle edit mode
   const {getPic } = usePicService()
   const {getShift} = useShiftService()
-  const [loading, setLoading] = useState(false);
   const [qtyReq, setQtyReq] = useState(null); // Track the value of the input field
-  const [qtyReqEdit, setQtyReqEdit] = useState(0); // Untuk update (handleEditClick)
   const [sortField, setSortField] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
   const [uploadData, setUploadData] = useState()
-    const [sortOrder, setSortOrder] = useState(null);
-    const [editingRows, setEditingRows] = useState(null);
-    const [qtyRecValues, setQtyRecValues] = useState({});
-const [selectedDate, setSelectedDate] = useState(null);
-const [selectedDialog, setSelectedDialog] = useState(null);
-const [isModalOpen, setIsModalOpen] = useState(false);
-const [pic, setPic] = useState(null); // State untuk menyimpan PIC
-const [selectedPic, setSelectedPic] = useState(null); // State untuk menyimpan PIC
-const [orderDate, setOrderDate] = useState(null);
-const [isEditing, setIsEditing] = useState(false);
-const [ visibleColumns, setVisibleColumns ] = useState([]);
-const [editingDateId, setEditingDateId] = useState(null);
-const [editingInDateId, setEditingInputDateId] = useState(null);
-const [toastVisible, setToastVisible] = useState(false);
-const addToast = useToast();
-const { name, roleName, imgProfile } = useVerify()
-  
-    const apiSection = 'section-public'
-   const apiWbs = 'wbs-public'
-    const apiGic = 'gic-public'
+  const [sortOrder, setSortOrder] = useState(null);
+  const [editingRows, setEditingRows] = useState(null);
+  const [qtyRecValues, setQtyRecValues] = useState({});
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDialog, setSelectedDialog] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [pic, setPic] = useState(null); // State untuk menyimpan PIC
+  const [selectedPic, setSelectedPic] = useState(null); // State untuk menyimpan PIC
+  const [ visibleColumns, setVisibleColumns ] = useState([]);
+  const addToast = useToast();
+  const { name, roleName, imgProfile } = useVerify()
+  const apiSection = 'section-public'
+  const apiWbs = 'wbs-public'
+  const apiGic = 'gic-public'
   
   const [filters, setFilters] = useState({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
   
-
     plant: {
       value: null,
       matchMode: FilterMatchMode.EQUALS,
     },
-
     storage: {
       value: null,
       matchMode: FilterMatchMode.EQUALS,
     },
-
     type: {
       value: null,
       matchMode: FilterMatchMode.EQUALS,
     },
   })
 
+  const columns = [
+    {
+      field: "createdAt", // ← pakai titik dua
+      header: "Created At",
+      style: { whiteSpace: 'nowrap', minWidth: '500px', textAlign: 'center' },
+      body: (rowData) => {
+        if (!rowData.createdAt) return "-";
+        const date = new Date(rowData.createdAt);
+        return format(date, "dd-MM-yyyy");
+      }
+    }
+  ];
+  
   const fetchTotalDef = async () => {
     const data = await getTotalInputDefisit(selectedDate); // Jika `selectedDate` null, API akan menampilkan semua data
     setTotalDefisit(data.totalDefisit);
@@ -198,33 +191,11 @@ const { name, roleName, imgProfile } = useVerify()
         console.error("Error fetching inventories:", error);
       }
     };
-  
-    // Fungsi untuk mendapatkan data stok berdasarkan material yang dipilih
-    
-    // const fetchStockData = async () => {
-    //   setLoading(true);
-    //   try {
-    //     const response = await getStockData();
-    //     setStockData(Array.isArray(response.data) ? response.data : []);
-    //   } catch (error) {
-    //     console.error("Error fetching StockData:", error);
-    //     setStockData([]);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-  
+
     useEffect(() => {
       getInventories();
     }, []);
 
-    // useEffect(() => {
-    //   if (selectedMaterialNo) {
-    //     fetchStockData(selectedMaterialNo);
-    //   } else {
-    //     setStockData([]); // Reset stockData jika tidak ada Material No yang dipilih
-    //   }
-    // }, [selectedMaterialNo]);
 
     const fetchCardData = useCallback(async () => {
       setIsLoading(true);
@@ -297,25 +268,7 @@ useEffect(() => {
   useEffect(() => {
     fetchShiftData();
   }, []);
-  
 
-
-
-  
-  // const fetchSohData = async (materialNo) => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await getSohData(materialNo);
-
-  //     setSohData(response.data.soh);
-  //     setStockId(response.data.id);
-  //   } catch (error) {
-  //     console.error("Error fetching StockData:", error);
-  //     setSohData();
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
 
   const handleAdd = async () => {
@@ -334,15 +287,16 @@ useEffect(() => {
       Address: selectedAddress?.label || "", // Material No yang dipilih
       Mrp: selectedMrp?.label || "",
       CardNo: selectedCard?.label, // Description yang dipilih
+      CostCenter:costcenter,
       Uom:baseUom,
-      QtyReq: qtyRec, // Card No yang dipilih
+      QtyReq: qtyRec, 
       QtyUpdate:"",
       RemainQty:"",
       DefPic: "",
       Section: selectedSection || "",
       NoGI: headtext, // Remark awal kosong
       OrderDate: null,
-      ShiftId: selectedShift?.value, // Quantity yang dimasukkan
+      ShiftId: selectedShift?.value, 
       PicId : selectedPic?.value,
 
     };
@@ -371,6 +325,7 @@ useEffect(() => {
         setQtyRec("");
         setHeadtext("");
         setStockId(null);
+        setCostcenter("");
         setSohData("");
         setBaseUom("");
 
@@ -693,6 +648,10 @@ const handleQtyChange = (e) => {
   const value = e.target.value; // Extract the value from the event
   setQtyRec(value); // Set the value as state
 };
+const handleCostCenter = (e) => {
+  const value = e.target.value; // Extract the value from the event
+  setCostcenter(value); // Set the value as state
+};
 
 const handleEditClick = (itemId, qtyReqValue) => {
   setIsEditable(itemId); // Tandai item yang sedang diedit
@@ -937,173 +896,142 @@ const handleSubmitDateOrder = async (rowData) => {
     console.error("Error updating Order Date & Def PIC: ", error);
   }
 };
+const header = () => (
+  <MultiSelect
+    value={visibleColumns}
+    options={columns}
+    optionLabel="header"
+    onChange={onColumnToggle}
+    className="w-full sm:w-20rem mb-2 mt-2"
+    display="chip"
+    placeholder="Show Hidden Columns"
+    style={{ borderRadius: '5px' }}
+  />
+)
 
-
-
-
+const onColumnToggle = (event) => {
+  let selectedColumns = event.value
+  let orderedSelectedColumns = columns.filter((col) =>
+    selectedColumns.some((sCol) => sCol.field === col.field),
+  )
+  setVisibleColumns(orderedSelectedColumns)
+}
 
   return (
     <CRow>
       <CCol>
         {isFormVisible && (
           <CCard>
-           <CCardHeader className="fw-bold fs-6 fst-italic"
-           >Form Input <span style={{ color: "orange" }}>Defisit</span></CCardHeader>
-            <CForm>
-              <CCardBody>
-                <CRow className="mt-1">
-                <CCol xs={12} sm={6} md={3} xl={3}>
-                  <CFormLabel htmlFor="materialNo" 
-                  style={{ 
-                    fontSize: '13px', }}>
-                    Material No
-                  </CFormLabel>
-                   <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                   <CreatableSelect
-                    className="basic-single"
-                    classNamePrefix="select"
-                    isLoading={isLoading}
-                    options={optionsMaterial}
-                    isClearable={isClearable}
-                    id="materialNo"
-                    onChange={handleMaterialNoChange}
-                    value={selectedMaterialNo}
-                    styles={customStyles}
-                    placeholder="Input Material No"
-                    isValidNewOption={(inputValue, selectValue, selectOptions) =>
-                      !selectOptions.some((option) => option.label === inputValue)
-                    }
-                  />
-               
-                    </CInputGroup>
-                 </CCol>
-                  <CCol xs={12} sm={6} md={4} xl={5} >
-                    <CFormLabel htmlFor="description" style={{ fontSize: '13px' }}>
+            <CCardHeader className="fw-bold fs-6 fst-italic">
+               <div className="d-flex  justify-content-between align-items-center">
+              <div className='d-flex align-items-center'>
+                <span className='me-2'> Form Input </span>
+                <p className="mb-0" style={{ color: "Orange" }} >Defisit</p>
+              </div>
+              <label className='me-2 mb-0'
+              style={{ cursor: 'pointer' ,color:isFormVisible ? 'black' : 'blue'}}
+              onClick={() => setIsFormVisible((prev) => !prev)}
+              >
+              {isFormVisible ? 'Hide' : 'Show'}
+              </label>
+            </div>
+              </CCardHeader>
+              <CForm>
+                <CCardBody>
+                  <CRow className="mt-1">
+                    <CCol xs={12} sm={6} md={3} xl={3}>
+                      <CFormLabel htmlFor="materialNo" style={{ fontSize: '13px', }}>
+                      Material No
+                      </CFormLabel>
+                      <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                        <CreatableSelect
+                          className="basic-single"
+                          classNamePrefix="select"
+                          isLoading={isLoading}
+                          options={optionsMaterial}
+                          isClearable={isClearable}
+                          id="materialNo"
+                          onChange={handleMaterialNoChange}
+                          value={selectedMaterialNo}
+                          styles={customStyles}
+                          placeholder="Input Material No"
+                          isValidNewOption={(inputValue, selectValue, selectOptions) =>
+                            !selectOptions.some((option) => option.label === inputValue)
+                          }
+                        />
+                      </CInputGroup>
+                    </CCol>
+                    <CCol xs={12} sm={6} md={4} xl={5} >
+                      <CFormLabel htmlFor="description" style={{ fontSize: '13px' }}>
                       Description
-                    </CFormLabel>
-                    <CreatableSelect
-                    className="basic-single"
-                    classNamePrefix="select"
-                    isLoading={isLoading}
-                    options={optionsDescription}
-                    isClearable={isClearable}
-                    id="materialNo"
-                    onChange={handleDescriptionChange}
-                    value={selectedDescription}
-                    styles={customStylesnotborder}
-                    placeholder="Please select Material No first"
-                    isValidNewOption={(inputValue, selectValue, selectOptions) =>
-                      !selectOptions.some((option) => option.label === inputValue)
-                    }
-                  />
-                    {/* <Select
-                    className="basic-single"
-                    classNamePrefix="Select Material No"
-                    isLoading={isLoading}
-                     placeholder="Select Material.."
-                    isClearable={isClearable}
-                    isDisabled={!selectedMaterialNo?.label?.endsWith(".")} // Enable jika ada titik di akhir
-                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                      (i) => ({
-                        value: i.id,
-                        label: i.Material.description,
-                      }),
-                    )}
-                    id="description"
-                    onChange={handleDescriptionChange}
-                    value={selectedDescription}
-                  /> */}
-                  {/* <CFormInput
-                    type="text"
-                    id="description"
-                    value={selectedDescription ? selectedDescription.label : ""}
-                    onChange={(e) => handleDescriptionChange(e.target.value)}
-                    disabled={true}
-                  /> */}
-                  </CCol>
-                  <CCol xs={12} sm={6} md={3} xl={2} >
-                  <CFormLabel htmlFor="address" style={{ fontSize: '13px' }}>Address</CFormLabel>
-                  {/* <Select
-                    className="basic-single"
-                    classNamePrefix="Select Material No"
-                    isLoading={isLoading}
-                    isClearable={isClearable}
-                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                      (i) => ({
-                        value: i.id,
-                        label: i.Address_Rack.addressRackName,
-                      }),
-                    )}
-                    id="address"
-                    onChange={setSelectedAddress}
-                    value={selectedAddress}
-                    isDisabled={true}
-                  /> */}
-                  <CFormInput
-                    type="text"
-                    id="address"
-                    placeholder="Select Material.."
-                    value={selectedAddress ? selectedAddress.label : ""}
-                    onChange={(e) => setSelectedAddress({ value: e.target.value, label: e.target.value })}
-                    disabled={true}
-                  />
-                </CCol>
-                <CCol xs={12} sm={6} md={2} xl={2} >
-                  <CFormLabel htmlFor="mrp" style={{ fontSize: '13px' }}>MRP</CFormLabel>
-                  {/* <Select
-                    className="basic-single"
-                    classNamePrefix="Select Material No"
-                    isLoading={isLoading}
-                    isClearable={isClearable}
-                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                      (i) => ({
-                        value: i.id,
-                        label: i.Material.mrpType,
-                      }),
-                    )}
-                    id="mrp"
-                    onChange={setSelectedMrp}
-                    value={selectedMrp}
-                    isDisabled={true}
-                  /> */}
-                  <CFormInput
-                    type="text"
-                    id="mrp"
-                    placeholder="Select Material.."
-                    value={selectedMrp ? selectedMrp.label : ""}
-                    onChange={(e) => setSelectedMrp({ value: e.target.value, label: e.target.value })}
-                    disabled={true}
-                  />
-                </CCol>
+                      </CFormLabel>
+                        <CreatableSelect
+                        className="basic-single"
+                        classNamePrefix="select"
+                        isLoading={isLoading}
+                        options={optionsDescription}
+                        isClearable={isClearable}
+                        id="materialNo"
+                        onChange={handleDescriptionChange}
+                        value={selectedDescription}
+                        styles={customStylesnotborder}
+                        placeholder="Please select Material No first"
+                        isValidNewOption={(inputValue, selectValue, selectOptions) =>
+                        !selectOptions.some((option) => option.label === inputValue)}
+                        /> 
+                    </CCol>
+                    <CCol xs={12} sm={6} md={3} xl={2} >
+                      <CFormLabel htmlFor="address" style={{ fontSize: '13px' }}>Address</CFormLabel>
+                        <CFormInput
+                          type="text"
+                          id="address"
+                          placeholder="Select Material.."
+                          value={selectedAddress ? selectedAddress.label : ""}
+                          onChange={(e) => setSelectedAddress({ value: e.target.value, label: e.target.value })}
+                          disabled={true}
+                        />
+                    </CCol>
+                    <CCol xs={12} sm={6} md={2} xl={2} >
+                      <CFormLabel htmlFor="mrp" style={{ fontSize: '13px' }}>MRP</CFormLabel>
+                        <CFormInput
+                          type="text"
+                          id="mrp"
+                          placeholder="Select Material.."
+                          value={selectedMrp ? selectedMrp.label : ""}
+                          onChange={(e) => setSelectedMrp({ value: e.target.value, label: e.target.value })}
+                          disabled={true}
+                        />
+                    </CCol>
                   </CRow>
+                  <hr className='my-2'/>
                   <CRow>
-                  <CCol xs={12} sm={3} md={2} xl={2}  className="mt-1">
-                        <label style={{ fontSize: '13px' }}>Card No</label>
-                        <div className="d-flex gap-3 align-items-center mt-2">
-                          <CFormCheck
-                            type="radio"
-                            id="payment1"
-                            label="GIC"
-                            checked={!isWbs}
-                            onChange={() => setIsWbs(false)}
-                            disabled={!selectedMaterialNo} // Perbaikan: Gunakan `disabled`
-                          />
-                          <CFormCheck
-                            type="radio"
-                            id="payment2"
-                            label="WBS"
-                            checked={isWbs}
-                            onChange={() => setIsWbs(true)}
-                            disabled={!selectedMaterialNo} // Perbaikan: Gunakan `disabled`
-                          />
-                        </div>
-                      </CCol>
-                      <CCol xs={12} sm={9} md={5} xl={3}  className="mt-1">
-                       <CFormLabel htmlFor="cardNo" style={{ fontSize: '13px' }}>
-                         ID Card
-                       </CFormLabel>
-                       <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                       <CreatableSelect
+                    <CCol xs={12} sm={3} md={2} xl={2}  >
+                      <label style={{ fontSize: '13px' }}>Card No</label>
+                      <div className="d-flex gap-3 align-items-center mt-2">
+                        <CFormCheck
+                          type="radio"
+                          id="payment1"
+                          label="GIC"
+                          checked={!isWbs}
+                          onChange={() => setIsWbs(false)}
+                          disabled={!selectedMaterialNo} // Perbaikan: Gunakan `disabled`
+                        />
+                        <CFormCheck
+                          type="radio"
+                          id="payment2"
+                          label="WBS"
+                          checked={isWbs}
+                          onChange={() => setIsWbs(true)}
+                          disabled={!selectedMaterialNo} // Perbaikan: Gunakan `disabled`
+                        />
+                      </div>
+                    </CCol>
+                    <CCol xs={12} sm={9} md={6} xl={4}  className="mt-1">
+                      <CFormLabel htmlFor="cardNo" style={{ fontSize: '13px' }}>
+                        ID Card
+                      </CFormLabel>
+                      <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                        <CreatableSelect
                           className="basic-single"
                           classNamePrefix="select"
                           isLoading={isLoading}
@@ -1122,197 +1050,166 @@ const handleSubmitDateOrder = async (rowData) => {
                             !selectOptions.some((option) => option.label === inputValue)
                           }
                         />
-                       {/* <Select
+                      </CInputGroup>
+                    </CCol>
+                    <CCol xs={12} sm={6} md={5} xl={3}  className="mt-1">
+                      <CFormLabel htmlFor="cc" style={{ fontSize: '13px' }}>
+                        Cost Center
+                      </CFormLabel>
+                      <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                      <CFormInput
+                        type="text"
+                        id="cc"
+                        placeholder="Select ID"
+                        value={costcenter}
+                        onChange={handleCostCenter} 
+                        disabled={!selectedMaterialNo}
+                      />
+                      </CInputGroup>
+                    </CCol>
+                    <CCol xs={12} sm={6} md={5} xl={3}  className="mt-1">
+                      <CFormLabel htmlFor="section" style={{ fontSize: '13px' }}>
+                        Section
+                      </CFormLabel>
+                      <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                      <CFormInput
+                        type="text"
+                        id="section"
+                        placeholder="Select Material.."
+                        value={selectedSection}
+                        disabled={!selectedMaterialNo}
+                      />
+                      </CInputGroup>
+                    </CCol>
+                  </CRow> 
+                  <hr className='my-2' /> 
+                  <CRow>
+                    <CCol xs={12} sm={6} md={6} xl={2}  className="mt-1">
+                      <CFormLabel htmlFor="pic" style={{ fontSize: '13px' }}>
+                        PIC
+                      </CFormLabel>
+                      <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                        <Select
                             className="basic-single"
-                            classNamePrefix="select"
-                            isClearable={isClearable}
-                            id="cardNo"
-                            options={cardOptions}
-                            value={selectedCard}
-                            onChange={(selected) => {
-                              setSelectedCard(selected);
-                              setSelectedSection(selected ? selected.sectionName : ""); // Pastikan sectionName muncul di input Section
-                            }}
+                            placeholder="Select PIC.."
+                            options={picOptions}
+                            id="pic"
+                            value={selectedPic}
+                            isDisabled={!selectedMaterialNo}
+                            onChange={handlePicChange} // Panggil fungsi yang sudah kita buat
                             styles={{
                               container: (provided) => ({ ...provided, width: '100%' }),
                               menuPortal: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
                               menu: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
                             }}
-                            menuPortalTarget={document.body}
-                            isDisabled={!selectedMaterialNo}
-                          /> */}
-                       </CInputGroup>
-                     </CCol>
-                     <CCol xs={12} sm={6} md={5} xl={3}  className="mt-1">
-                    <CFormLabel htmlFor="shift" style={{ fontSize: '13px' }}>
-                      Section
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                    <CFormInput
-                      type="text"
-                      id="section"
-                      placeholder="Select Material.."
-                      value={selectedSection}
-                      disabled={!selectedMaterialNo}
-                    />
-                    </CInputGroup>
-                  </CCol>
-                     <CCol xs={12} sm={6} md={6} xl={2}  className="mt-1">
-                    <CFormLabel htmlFor="pic" style={{ fontSize: '13px' }}>
-                      PIC
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                    <Select
-                        className="basic-single"
-                        placeholder="Select PIC.."
-                        options={picOptions}
-                        id="pic"
-                        value={selectedPic}
-                        isDisabled={!selectedMaterialNo}
-                        onChange={handlePicChange} // Panggil fungsi yang sudah kita buat
-                        styles={{
-                          container: (provided) => ({ ...provided, width: '100%' }),
-                          menuPortal: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
-                          menu: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
-                        }}
-                      />
-                    </CInputGroup>
-                  </CCol>
-                  <CCol xs={12} sm={6} md={6} xl={2}  className="mt-1">
-                    <CFormLabel htmlFor="shift" style={{ fontSize: '13px' }}>
-                      Shift
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                      <Select
-                        className="basic-single"
-                        placeholder="Select PIC.."
-                        classNamePrefix="select"
-                        isClearable={isClearable}
-                        id="shift"
-                        options={shiftOptions}
-                        value={selectedShift}
-                        onChange={setSelectedShift}
-                        styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
-                        isDisabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
-                      />
-                    </CInputGroup>
-                  </CCol>
-                  </CRow>  
-                <CRow>
-                  <CCol xs={12} sm={6} md={3} xl={2} className="mt-1">
-                    <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
-                    {`Quantity Good Issue (${baseUom})`}
-                    </CFormLabel>
-                    <CFormInput
-                      type="number"
-                      placeholder="Input Qty.."
-                      text="Must be number."
-                      aria-describedby="quantity"
-                      required
-                      inputMode="numeric"
-                      value={qtyRec}
-                      onChange={handleQtyChange} 
-                      autoComplete="off"
-                      disabled={!selectedMaterialNo}
-                      min="0" // Mencegah angka negatif
-                    />
-                  </CCol>
-                  <CCol xs={12} sm={6} md={3} xl={2} className="mt-1">
-                    <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
-                    Header Text
-                    </CFormLabel>
-                    <CFormInput
-                      type="text"
-                      placeholder="Input Please"
-                      text="Must be number."
- 
-                      required
-                      inputMode="numeric"
-                      value={headtext}
-                      onChange={handleHeaderText} 
-                      autoComplete="off"
-                      disabled={!selectedMaterialNo}
-                      min="0" // Mencegah angka negatif
-                    />
-                  </CCol>
-                  {/* <CCol xs={12} sm={5} md={3} xl={2} className="mt-1">
-                      <CFormLabel htmlFor="soh" style={{ fontSize: "13px" }}>
-                        {` SOH  (${baseUom})`}
+                          />
+                      </CInputGroup>
+                    </CCol>
+                    <CCol xs={12} sm={6} md={6} xl={2}  className="mt-1">
+                      <CFormLabel htmlFor="shift" style={{ fontSize: '13px' }}>
+                        Shift
+                      </CFormLabel>
+                      <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                        <Select
+                          className="basic-single"
+                          placeholder="Select PIC.."
+                          classNamePrefix="select"
+                          isClearable={isClearable}
+                          id="shift"
+                          options={shiftOptions}
+                          value={selectedShift}
+                          onChange={setSelectedShift}
+                          styles={{ container: (provided) => ({ ...provided, width: '100%' }) }}
+                          isDisabled={!selectedMaterialNo} // DISABLED jika Material No belum dipilih
+                        />
+                      </CInputGroup>
+                    </CCol>
+                    <CCol xs={12} sm={6} md={3} xl={2} className="mt-1">
+                      <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
+                      {`Quantity Good Issue (${baseUom})`}
                       </CFormLabel>
                       <CFormInput
-                      type="text"
-                      placeholder="Select Material.."
-                      required
-                      inputMode="numeric"
-                      autoComplete="off"
-                      className="basic-single"
-                      classNamePrefix="Select Material No"
-                      isClearable
-                      id="soh"
-                      value={sohData}
-                      disabled={true} // DISABLED jika Material No belum dipili
-                    />
-                    </CCol> */}
-                  <CCol
-                    xs={12} sm={6} md={3} xl={3}
+                        type="number"
+                        placeholder="Input Qty.."
+                        text="Must be number."
+                        aria-describedby="quantity"
+                        required
+                        inputMode="numeric"
+                        value={qtyRec}
+                        onChange={handleQtyChange} 
+                        autoComplete="off"
+                        disabled={!selectedMaterialNo}
+                        min="0" // Mencegah angka negatif
+                      />
+                    </CCol>
+                    <CCol xs={12} sm={6} md={3} xl={2} className="mt-1">
+                      <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
+                      Header Text
+                      </CFormLabel>
+                      <CFormInput
+                        type="text"
+                        placeholder="Input Please"
+                        text="Must be number."
+                        required
+                        inputMode="numeric"
+                        value={headtext}
+                        onChange={handleHeaderText} 
+                        autoComplete="off"
+                        disabled={!selectedMaterialNo}
+                        min="0" // Mencegah angka negatif
+                      />
+                    </CCol>
+                    <CCol xs={12} sm={6} md={3} xl={3}
                     className="d-flex justify-content-start align-items-center mt-1"
-                  >
-                   <CButton color="primary" onClick={handleAdd}>Add</CButton>
+                    >
+                      <CButton color="primary" onClick={handleAdd}>Add</CButton>
+                    </CCol>
+                  </CRow>
+                  {/* Collapse content */}
+                </CCardBody>
+              </CForm>
+            </CCard>
+          )}
+          <CCard className="mt-3">
+            <CCardHeader className="fw-bold fs-6 fst-italic">Table Defisit</CCardHeader>
+            <CForm>
+              <CCardBody>
+                <CRow>
+                  <CCol xs={12} sm={12} md={5} lg={6} xl={8}>
+                    <div className="d-flex flex-wrap justify-content-start">
+                      <Button
+                        type="button"
+                        label="Excel"
+                        icon="pi pi-file-excel"
+                        severity="success"
+                        className="rounded-3 me-2 mb-2"
+                        onClick={exportExcel}
+                        data-pr-tooltip="XLS"
+                      />
+                      {/* <Button
+                        type="button"
+                        label="Upload"
+                        icon="pi pi-file-import"
+                        severity="primary"
+                        className="rounded-5 me-2 mb-2"
+                        onClick={showModalUpload}
+                        data-pr-tooltip="XLS"
+                      /> */}
+                    </div>
                   </CCol>
-                </CRow>
-                {/* Collapse content */}
-              </CCardBody>
-            </CForm>
-          </CCard>
-        )}
-        <CCard className="mt-3">
-          <CCardHeader className="fw-bold fs-6 fst-italic">Tabel Defisit</CCardHeader>
-          <CForm>
-            <CCardBody>
-              <CRow>
-                <CCol xs={12} sm={12} md={5} lg={6} xl={8}>
-                  <div className="d-flex flex-wrap justify-content-start">
-                    <Button
-                      type="button"
-                      label={isFormVisible ? 'Hide ' : 'Show '}
-                      icon={isFormVisible ? 'pi pi-minus' : 'pi pi-plus'}
-                      severity="primary"
-                      className="rounded-3 me-2 mb-2"
-                      onClick={() => setIsFormVisible((prev) => !prev)}
-                    />
-                    <Button
-                      type="button"
-                      label="Excel"
-                      icon="pi pi-file-excel"
-                      severity="success"
-                      className="rounded-3 me-2 mb-2"
-                      onClick={exportExcel}
-                      data-pr-tooltip="XLS"
-                    />
-                     {/* <Button
-                      type="button"
-                      label="Upload"
-                      icon="pi pi-file-import"
-                      severity="primary"
-                      className="rounded-5 me-2 mb-2"
-                      onClick={showModalUpload}
-                      data-pr-tooltip="XLS"
-                    /> */}
-                  </div>
-                </CCol>
-                <CCol xs={6} sm={6} md={4} lg={3} xl={2} >
-                <div className="d-flex flex-wrap justify-content-end">
-                <div className="calendar-container custom-calendar ">
-                  <Calendar 
-                    value={selectedDate} 
-                    onChange={handleDateChangeTabel} 
-                    dateFormat="yy-mm-dd" 
-                    placeholder="Filter by Date Range"
-                    selectionMode="range"
-                    readOnlyInput 
-                  />
-                  <i className="pi pi-calendar calendar-icon"></i>
-                </div>
+                  <CCol xs={6} sm={6} md={4} lg={3} xl={2} >
+                    <div className="d-flex flex-wrap justify-content-end">
+                      <div className="calendar-container custom-calendar ">
+                        <Calendar 
+                          value={selectedDate} 
+                          onChange={handleDateChangeTabel} 
+                          dateFormat="yy-mm-dd" 
+                          placeholder="Filter by Date Range"
+                          selectionMode="range"
+                          readOnlyInput 
+                        />
+                        <i className="pi pi-calendar calendar-icon"></i>
+                      </div>
                   </div>
                  </CCol>
                      <CCol xs={6} sm={6} md={3} lg={3} xl={2}>
@@ -1337,6 +1234,7 @@ const handleSubmitDateOrder = async (rowData) => {
                       sortField={sortField} 
                       sortOrder={sortOrder} 
                       onSort={onSort}
+                      header={header}
                       paginator 
                       rowsPerPageOptions={[12, 50, 100, 500]}
                       rows={12}
@@ -1347,9 +1245,10 @@ const handleSubmitDateOrder = async (rowData) => {
                       editingRows={editingRows} 
                       onEditingRowsChange={setEditingRows}
                       className="custom-table dashboard"
-                      scrollable 
-                      scrollHeight="900px"
-                      scrollDirection="horizontal"
+                      scrollable
+                        scrollHeight="900px"
+                        columnResizeMode="expand"
+                
                     >
                         <Column
                         className=""
@@ -1383,8 +1282,10 @@ const handleSubmitDateOrder = async (rowData) => {
                         </span>
                       )} 
                     />
-                      <Column field="MaterialNo" header="Material No" 
-                      style={{ whiteSpace: 'nowrap', minWidth: '85px' }}/>
+                      <Column field="MaterialNo" 
+                      header="Material No" 
+                      style={{ whiteSpace: 'nowrap', minWidth: '85px' }}
+                      />
                       <Column field="Description" header="Description" 
                       style={{ whiteSpace: 'nowrap'}}/>
                     {/* <Column 
@@ -1412,10 +1313,13 @@ const handleSubmitDateOrder = async (rowData) => {
                             </span>
                           )} 
                         />
+                        <Column 
+                        field="CostCenter" 
+                        header="Cost Center"
+                      />
                       <Column 
                         field="Uom" 
                         header="UoM" 
-                      
                       />
                       <Column body={actionBodyTemplateRec} 
                       field="QtyReq" 
@@ -1550,7 +1454,17 @@ const handleSubmitDateOrder = async (rowData) => {
                     align="center" 
                     style={{ minWidth: '60px' }} 
                   />
-                 
+                  {visibleColumns.map((col, index) => (
+                  <Column
+                    key={index}
+                    field={col.field}
+                    header={col.header}
+                    body={col.body}
+                    sortable={col.sortable}
+                    headerStyle={col.headerStyle}
+                    bodyStyle={col.bodyStyle}
+                  />
+                ))}
                   </DataTable>
                 </div>
               </CRow>

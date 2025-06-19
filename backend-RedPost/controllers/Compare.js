@@ -101,18 +101,17 @@ export const getCompare = async (req, res) => {
           const lastInputDateEntry = lastInputDates.find(item => item.MaterialNo === material);
           
           // Cek data dari InputRedPost dulu, jika tidak ada cari di InputDefisit
-          const materialInfo = 
-              uniqueMaterialsRedPost.find(item => item.MaterialNo === material) || 
-              uniqueMaterialsDefisit.find(item => item.MaterialNo === material);
-  
+          const materialInfoRedPost = uniqueMaterialsRedPost.find(item => item.MaterialNo === material);
+          const materialInfoDefisit = uniqueMaterialsDefisit.find(item => item.MaterialNo === material);
+          
           return {
               MaterialNo: material,
-              Description: materialInfo ? materialInfo.Description : "", 
-              Uom: materialInfo ? materialInfo.Uom : "", 
-              Address: materialInfo ? materialInfo.Address : "", 
+              Description: materialInfoRedPost?.Description || materialInfoDefisit?.Description || "", 
+              Uom: materialInfoRedPost?.Uom || materialInfoDefisit?.Uom || "", 
+              Address: materialInfoRedPost?.Address || materialInfoDefisit?.Address || "", 
               Soh: sohEntry ? sohEntry.sohCount : 0, 
               Defisit: defisitEntry ? defisitEntry.defisitCount : 0, 
-              InputDate: lastInputDateEntry ? lastInputDateEntry.lastInputDate : null // ✅ Gunakan InputDate terakhir
+              InputDate: lastInputDateEntry ? lastInputDateEntry.lastInputDate : null 
           };
       });
   

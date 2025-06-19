@@ -82,7 +82,7 @@ export const createInputRedPost = async (req, res) => {
 
 export const updateInputRedPost = async (req, res) => {
   try {
-    const body = { ...req.body, OrderPic: req.body.PICOrder ? req.body.PICOrder : ""}
+    const body = { ...req.body }
     console.log("New BODY :", body)
     const inputRedPostId = req.params.id; // Ambil ID dari parameter URL
 

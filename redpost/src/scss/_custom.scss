@@ -449,3 +449,15 @@
     transform:rotate(330deg);
     -webkit-transform:rotate(330deg);
   }
+
+  ///////////////////Login button/////////////////////////
+.login-button{
+  background-color: rgba(100, 130, 173, 0.66);
+  color: white;
+  font-size: medium;
+}
+.login-button:hover{
+  background-color: rgba(6, 102, 237, 0.66);
+  color: white;
+  font-size: large;
+}

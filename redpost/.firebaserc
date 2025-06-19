@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "redpost-warehouse"
-  }
+    "default": "tmmin-redpost",
+    "demoooo": "redpost-warehouse"
+  },
+  "targets": {},
+  "etags": {}
 }

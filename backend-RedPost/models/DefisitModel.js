@@ -61,6 +61,10 @@ const InputDefisit = db.define(
         type: DataTypes.STRING,
         allowNull: true,
       },
+       CostCenter: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       NoGI: {
         type: DataTypes.STRING,
         allowNull: true,

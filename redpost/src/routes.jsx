@@ -6,6 +6,8 @@ const Input = React.lazy(() => import('./views/input/Input'))
 const DataMorning = React.lazy(() => import('./views/input/DataMorn'))
 const FollowUp = React.lazy(() => import('./views/input/FollowSoh'))
 const InputDefisit = React.lazy(() => import('./views/input/InputDefisit'))
+  ////////////////////////////Master Data////////////////////////////
+const MasterPic = React.lazy(() => import('./views/masterdata/MasterPic'))
 
 
 
@@ -17,6 +19,8 @@ const routes = [
   { path: '/datamorn', name: 'DataMorning', element: DataMorning },
   { path: '/follow-soh', name: 'Follow Up', element: FollowUp },
   { path: '/input-defisit', name: 'Input Defisit', element: InputDefisit },
+  ////////////////////////////Master Data////////////////////////////
+  { path: '/master-pic', name: 'Master PIC', element: MasterPic },
 ]
 
 export default routes

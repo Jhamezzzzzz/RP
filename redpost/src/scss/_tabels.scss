@@ -1,8 +1,12 @@
 /* Garis di antara header dan tabel */
+.custom-table td:nth-child(16) {
+  min-width: 90px !important;
+  width: 110px !important;
+}
 .custom-table {
   border: 1px solid #e0e0e0; /* Garis luar hitam, tidak terlalu tebal */
   border-collapse: collapse;
-  font-size: 11px; /* Sesuaikan ukuran teks sesuai kebutuhan */
+  font-size: 14px; /* Sesuaikan ukuran teks sesuai kebutuhan */
 }
 
 /* Garis antar header */
@@ -27,7 +31,7 @@
 .custom-table thead tr th,
 .custom-table tbody tr td {
   border: 1px solid #e0e0e0; /* Garis lebih hitam untuk tampilan lebih jelas */
-  font-size: 12px; /* Pastikan semua teks dalam header dan isi tabel lebih kecil */
+  font-size: 14px; /* Pastikan semua teks dalam header dan isi tabel lebih kecil */
 }
 
 /* Baris tabel dengan striping */
@@ -93,3 +97,4 @@
 .highlight-border td {
   border: 2px solid yellow !important;
 }
+

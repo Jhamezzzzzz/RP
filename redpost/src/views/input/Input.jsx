@@ -22,7 +22,6 @@ import {
   CTableHeaderCell,
   CTableBody,
   CTableDataCell,
-  CTableCaption,
   CFormInput,
   CButton,
   CFormLabel,
@@ -38,6 +37,7 @@ import {
   CModalTitle,
   CModalFooter,
   CSpinner,
+  CTooltip,
 } from '@coreui/react'
 import { Button } from 'primereact/button'
 import withReactContent from 'sweetalert2-react-content'
@@ -62,6 +62,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle, faExclamationTriangle,faPencilAlt,faCheck,faPaperPlane } from "@fortawesome/free-solid-svg-icons";
 import { MultiSelect } from 'primereact/multiselect';
 import { useToast } from "../../App";
+import CreatableSelect from "react-select/creatable";
 
 const MySwal = withReactContent(Swal)
 
@@ -110,9 +111,9 @@ const [editingRemark, setEditingRemark] = useState(null);
   const [sortField, setSortField] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
   const [uploadData, setUploadData] = useState()
-    const [sortOrder, setSortOrder] = useState(null);
-    const [editingRows, setEditingRows] = useState(null);
-    const [qtyRecValues, setQtyRecValues] = useState({});
+  const [sortOrder, setSortOrder] = useState(null);
+  const [editingRows, setEditingRows] = useState(null);
+  const [qtyRecValues, setQtyRecValues] = useState({});
 const [selectedDate, setSelectedDate] = useState(null);
 const [selectedDialog, setSelectedDialog] = useState(null);
 const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,9 +122,13 @@ const [selectedPic, setSelectedPic] = useState(null); // State untuk menyimpan P
 const [orderDate, setOrderDate] = useState(null);
 const [isEditing, setIsEditing] = useState(false);
 const [ visibleColumns, setVisibleColumns ] = useState([]);
-const [editingDateId, setEditingDateId] = useState(null);
+const [selectedRow, setSelectedRow] = useState(null); // ⬅️ buat nyimpan row yang diklik
+const [modalEditOrder, setModalEditOrder] = useState(false)
 const { name, roleName, imgProfile } = useVerify()
 const addToast = useToast();
+const [editedDate, setEditedDate] = useState('');
+const [editedRemark, setEditedRemark] = useState('');
+const displayDate = format(date, 'dd-MM-yyyy'); // untuk tampilkan ke user
   
     const apiSection = 'section-public'
    const apiWbs = 'wbs-public'
@@ -149,66 +154,7 @@ const addToast = useToast();
     },
   })
   const columns = [
-    // {
-    //   field: "Remark",
-    //   header: "Remark",
-    //   body: (rowData) => (
-    //     <div 
-    //       style={{ 
-    //         display: "flex", 
-    //         alignItems: "center", 
-    //         background: "white", 
-    //         padding: "5px", 
-    //         borderRadius: "4px", 
-    //         justifyContent: "space-between",
-    //         maxWidth: "200px", // Batas lebar kotak
-    //       }}
-    //     >
-    //       {isEditing === rowData.id ? (
-    //         <input 
-    //           type="text" 
-    //           value={editingRemark} 
-    //           onChange={(e) => setEditingRemark(e.target.value)} 
-    //           style={{ 
-    //             flexGrow: 1, 
-    //             border: "none", 
-    //             outline: "none", 
-    //             maxWidth: "150px", 
-    //             overflow: "hidden"
-    //           }} 
-    //           // placeholder=""
-    //         />
-    //       ) : (
-    //         <span 
-    //           style={{ 
-    //             flexGrow: 1, 
-    //             color: rowData.Remark && rowData.Remark.trim() ? "black" : "gray", 
-    //             maxWidth: "150px", 
-    //             whiteSpace: "nowrap", 
-    //             overflow: "hidden", 
-    //             textOverflow: "ellipsis"
-    //           }}
-    //           title={rowData.Remark} 
-    //         >
-    //           {rowData.Remark && rowData.Remark.trim() ? rowData.Remark : "...."}
-    //         </span>
-    //       )}
-    //       <button 
-    //     onClick={(e) => {
-    //       e.stopPropagation(); // Cegah event bubbling
-    //       isEditing === rowData.id ? handleSubmitRemark(rowData) : handleEditRemark(rowData);
-    //     }}
-    //     style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px", alignSelf: "flex-end" }}
-    //   >
-    //     {isEditing === rowData.id ? (
-    //       <FontAwesomeIcon icon={faPaperPlane} style={{ color: "blue" }} />
-    //     ) : (
-    //       <FontAwesomeIcon icon={faPencilAlt} style={{ color: "gray" }} />
-    //     )}
-    //   </button>
-    //     </div>
-    //   )
-    // }
+    
     {
       field: "Remark",
       header: "Remark",
@@ -744,14 +690,30 @@ const onRowEditComplete = async (e) => {
       console.error('Error updating or adding data:', error);
   }
 };
+const actionEditTemplate = (rowData) => {
+  return (
+    <Button 
+      className="p-button-text" 
+      onClick={() => {
+        setSelectedRow(rowData);
+        setEditedDate(rowData.OrderDate || '');
+        setEditedRemark(rowData.Remark || '');
+        setModalEditOrder(true);
+      }}
+    >
+      <FaPencilAlt size={13} color="blue" />
+    </Button>
+  );
+};
 
-const actionBodyTemplate = (rowData) => {
+
+const actionDeleteTemplate = (rowData) => {
     return (
 <Button 
   className="p-button-danger p-button-text" 
   onClick={() => handleDelete(rowData.id)}
 >
-  <FaTrash size={14} color="red" />
+  <FaTrash size={13} color="red" />
 </Button>
 
     );
@@ -923,7 +885,7 @@ const handleDateChangeTabel = (e) => {
   setSelectedDate(e.value);
 
   if (e.value && e.value.length === 2) {
-    const [startDate, endDate] = e.value.map(date => format(date, 'yyyy-MM-dd'));
+    const [startDate, endDate] = e.value.map(date => format(date, 'dd-MM-yyyy'));
 
     setFilters({
       ...filters,
@@ -959,67 +921,6 @@ const handlePicChange = (selected) => {
 };
 
 
-  const handleDateOrder = (value, rowData) => {
-    const updatedData = { 
-      ...rowData, 
-      OrderDate: value, 
-      OrderPic: name // Set PIC Order sesuai user yang mengedit
-    };
-
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === rowData.id ? updatedData : item
-      )
-    );
-
-  setEditingDateId(rowData.id); // Tandai bahwa item ini sedang diedit
-};
-
-const handleSubmitDateOrder = async (rowData) => {
-  if (!rowData.OrderDate) return; // Pastikan OrderDate tidak kosong
-
-  const updatedData = { 
-    ...rowData, 
-    OrderDate: rowData.OrderDate // Hanya update Order Date
-  };
-
-  try {
-    await updateInput(rowData.id, updatedData);
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === rowData.id 
-          ? { ...item, OrderDate: rowData.OrderDate } 
-          : item
-      )
-    );
-
-    // Setelah Order Date diubah, update juga OrderPic
-    handleSubmitOrderPic(rowData); // Panggil fungsi terpisah untuk OrderPic
-    addToast("Success ,Update Date Plan Delivery", "success", "info");
-  } catch (error) {
-    console.error("Error updating Order Date: ", error);
-  }
-};
-const handleSubmitOrderPic = async (rowData) => {
-  const updatedData = { 
-    ...rowData, 
-    OrderPic: name // Update PIC Order dengan nama pengguna yang sedang login
-  };
-
-  try {
-    await updateInput(rowData.id, updatedData);
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === rowData.id 
-          ? { ...item, OrderPic: name } 
-          : item
-      )
-    );
-  } catch (error) {
-    console.error("Error updating PIC Order: ", error);
-  }
-};
-
 
 
 const onColumnToggle = (event) => {
@@ -1041,47 +942,78 @@ const header = () => (
     style={{ borderRadius: '5px' }}
   />
 )
+const handleSubmitUpdateOrder = async () => {
+  if (!selectedRow) return;
 
+  const updatedData = {
+    ...selectedRow,
+    OrderDate: editedDate,
+    OrderPic: name, // dari useVerify()
+    Remark: editedRemark
+  };
 
-
+  try {
+    await updateInput(selectedRow.id, updatedData); // asumsi: updateInput = service axios
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === selectedRow.id ? { ...item, ...updatedData } : item
+      )
+    );
+    setModalEditOrder(false);
+    addToast("Success update", "success", "info");
+  } catch (error) {
+    console.error("Update failed", error);
+  }
+};
 
 
   return (
     <CRow>
-      <CCol>
-        {isFormVisible && (
-          <CCard>
-           <CCardHeader className="fw-bold fs-6 fst-italic">
-            Form Input <span style={{ color: "red" }}>Red Post</span>
+      <CCol> 
+        <CCard>
+          <CCardHeader className="fw-bold fs-6 fst-italic">
+            <div className="d-flex  justify-content-between align-items-center">
+              <div className='d-flex align-items-center'>
+                <span className='me-2'> Form Input </span>
+                <p className="mb-0" style={{ color: "red" }} >Red Post</p>
+              </div>
+              <label className='me-2 mb-0'
+              style={{ cursor: 'pointer' ,color:isFormVisible ? 'black' : 'blue'}}
+              onClick={() => setIsFormVisible((prev) => !prev)}
+              >
+              {isFormVisible ? 'Hide' : 'Show'}
+              </label>
+            </div>
           </CCardHeader>
-            <CForm>
+          <CForm>
+            {isFormVisible && (
               <CCardBody>
                 <CRow className="mt-1">
-                <CCol xs={12} sm={6} md={3} xl={3}>
-                  <CFormLabel htmlFor="materialNo" 
-                  style={{ 
-                    fontSize: '13px', }}>
-                    Material No
-                  </CFormLabel>
-                   <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                   <Select
-                     className="basic-single"
-                     classNamePrefix="select"
-                     isLoading={isLoading}
-                      isClearable={isClearable}
-                      options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                       (i) => ({
-                         value: i.id,
-                         label: i.Material.materialNo,
-                       }),
-                     )}
-                     id="materialNo"
-                     onChange={handleMaterialNoChange}
-                     value={selectedMaterialNo}
-                     styles={customStyles}
-                   />
+                  <CCol xs={12} sm={6} md={3} xl={3}>
+                    <CFormLabel htmlFor="materialNo" 
+                      style={{ 
+                      fontSize: '13px', }}>
+                      Material No
+                    </CFormLabel>
+                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                      <Select
+                        className="basic-single"
+                        classNamePrefix="select"
+                        isLoading={isLoading}
+                          isClearable={isClearable}
+                          options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
+                          (i) => ({
+                            value: i.id,
+                            label: i.Material.materialNo,
+                          }),
+                        )}
+                        id="materialNo"
+                        onChange={handleMaterialNoChange}
+                        value={selectedMaterialNo}
+                        styles={customStyles}
+                      />
                     </CInputGroup>
-                 </CCol>
+                  </CCol>
                   <CCol xs={12} sm={6} md={4} xl={5} >
                     <CFormLabel htmlFor="description" style={{ fontSize: '13px' }}>
                       Description
@@ -1102,71 +1034,33 @@ const header = () => (
                     id="description"
                     onChange={handleDescriptionChange}
                     value={selectedDescription}
-                  />
-                  {/* <CFormInput
-                    type="text"
-                    id="description"
-                    value={selectedDescription ? selectedDescription.label : ""}
-                    onChange={(e) => handleDescriptionChange(e.target.value)}
-                    disabled={true}
-                  /> */}
+                    />
                   </CCol>
                   <CCol xs={12} sm={6} md={3} xl={2} >
-                  <CFormLabel htmlFor="address" style={{ fontSize: '13px' }}>Address</CFormLabel>
-                  {/* <Select
-                    className="basic-single"
-                    classNamePrefix="Select Material No"
-                    isLoading={isLoading}
-                    isClearable={isClearable}
-                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                      (i) => ({
-                        value: i.id,
-                        label: i.Address_Rack.addressRackName,
-                      }),
-                    )}
-                    id="address"
-                    onChange={setSelectedAddress}
-                    value={selectedAddress}
-                    isDisabled={true}
-                  /> */}
-                  <CFormInput
-                    type="text"
-                    id="address"
-                    placeholder="Select Material.."
-                    value={selectedAddress ? selectedAddress.label : ""}
-                    onChange={(e) => setSelectedAddress({ value: e.target.value, label: e.target.value })}
-                    disabled={true}
-                  />
-                </CCol>
-                <CCol xs={12} sm={6} md={2} xl={2} >
-                  <CFormLabel htmlFor="mrp" style={{ fontSize: '13px' }}>MRP</CFormLabel>
-                  {/* <Select
-                    className="basic-single"
-                    classNamePrefix="Select Material No"
-                    isLoading={isLoading}
-                    isClearable={isClearable}
-                    options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                      (i) => ({
-                        value: i.id,
-                        label: i.Material.mrpType,
-                      }),
-                    )}
-                    id="mrp"
-                    onChange={setSelectedMrp}
-                    value={selectedMrp}
-                    isDisabled={true}
-                  /> */}
-                  <CFormInput
-                    type="text"
-                    id="mrp"
-                    placeholder="Select Material.."
-                    value={selectedMrp ? selectedMrp.label : ""}
-                    onChange={(e) => setSelectedMrp({ value: e.target.value, label: e.target.value })}
-                    disabled={true}
-                  />
-                </CCol>
-                  </CRow>
-                  <CRow>
+                    <CFormLabel htmlFor="address" style={{ fontSize: '13px' }}>Address</CFormLabel>
+                    <CFormInput
+                      type="text"
+                      id="address"
+                      placeholder="Select Material.."
+                      value={selectedAddress ? selectedAddress.label : ""}
+                      onChange={(e) => setSelectedAddress({ value: e.target.value, label: e.target.value })}
+                      disabled={true}
+                    />
+                  </CCol>
+                  <CCol xs={12} sm={6} md={2} xl={2} >
+                    <CFormLabel htmlFor="mrp" style={{ fontSize: '13px' }}>MRP</CFormLabel>
+                    <CFormInput
+                      type="text"
+                      id="mrp"
+                      placeholder="Select Material.."
+                      value={selectedMrp ? selectedMrp.label : ""}
+                      onChange={(e) => setSelectedMrp({ value: e.target.value, label: e.target.value })}
+                      disabled={true}
+                    />
+                  </CCol>
+                </CRow>
+                <hr className="mb-0 me-0 text-gray-400" />
+                <CRow>
                   <CCol xs={12} sm={3} md={2} xl={2}  className="mt-1">
                         <label style={{ fontSize: '13px' }}>Card No</label>
                         <div className="d-flex gap-3 align-items-center mt-2">
@@ -1193,41 +1087,63 @@ const header = () => (
                          ID Card
                        </CFormLabel>
                        <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                       <Select
-                            className="basic-single"
-                            classNamePrefix="select"
-                            isClearable={isClearable}
-                            id="cardNo"
-                            options={cardOptions}
-                            value={selectedCard}
-                            onChange={(selected) => {
+                       <CreatableSelect
+                          className="basic-single"
+                          classNamePrefix="select"
+                          isClearable={isClearable}
+                          id="cardNo"
+                          options={cardOptions}
+                          value={selectedCard}
+                          onChange={(selected) => {
+                            if (!selected?.value) {
+                              // manual input / kosong
+                              const customOption = {
+                                value: selected?.label || selected,
+                                label: selected?.label || selected,
+                                sectionName: "",
+                              };
+                              setSelectedCard(customOption);
+                              setSelectedSection(""); // reset Section kalau ID Card ketik manual
+                            } else {
                               setSelectedCard(selected);
-                              setSelectedSection(selected ? selected.sectionName : ""); // Pastikan sectionName muncul di input Section
-                            }}
-                            styles={{
-                              container: (provided) => ({ ...provided, width: '100%' }),
-                              menuPortal: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
-                              menu: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
-                            }}
-                            menuPortalTarget={document.body}
-                            isDisabled={!selectedMaterialNo}
-                          />
+                              setSelectedSection(selected.sectionName || "");
+                            }
+                          }}
+                          styles={{
+                            container: (provided) => ({ ...provided, width: '100%' }),
+                            menuPortal: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
+                            menu: (base) => ({ ...base, zIndex: 99999, position: "absolute" }),
+                          }}
+                          menuPortalTarget={document.body}
+                          isDisabled={!selectedMaterialNo}
+                        />                       
                        </CInputGroup>
                      </CCol>
-                     <CCol xs={12} sm={6} md={5} xl={3}  className="mt-1">
-                    <CFormLabel htmlFor="shift" style={{ fontSize: '13px' }}>
-                      Section
-                    </CFormLabel>
-                    <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
-                    <CFormInput
-                      type="text"
-                      id="section"
-                      placeholder="Select Card No.."
-                      value={selectedSection}
-                      disabled={!selectedMaterialNo}
-                    />
-                    </CInputGroup>
-                  </CCol>
+                     <CCol xs={12} sm={6} md={5} xl={3} className="mt-1">
+                        <CFormLabel htmlFor="section" style={{ fontSize: '13px' }}>
+                          Section
+                        </CFormLabel>
+                        <CInputGroup className="flex-nowrap" style={{ width: '100%' }}>
+                          <CreatableSelect
+                            className="basic-single"
+                            classNamePrefix="select"
+                            id="section"
+                            isClearable={true}
+                            placeholder="Select or type Section.."
+                            value={selectedSection ? { label: selectedSection, value: selectedSection } : null}
+                            onChange={(selected) => {
+                              setSelectedSection(selected ? selected.value : "");
+                            }}
+                            isDisabled={!selectedMaterialNo}
+                            styles={{
+                              container: (provided) => ({ ...provided, width: '100%' }),
+                              menuPortal: (base) => ({ ...base, zIndex: 99999 }),
+                              menu: (base) => ({ ...base, zIndex: 99999 }),
+                            }}
+                            menuPortalTarget={document.body}
+                          />
+                        </CInputGroup>
+                      </CCol>
                      <CCol xs={12} sm={6} md={6} xl={2}  className="mt-1">
                     <CFormLabel htmlFor="pic" style={{ fontSize: '13px' }}>
                       PIC
@@ -1268,7 +1184,8 @@ const header = () => (
                       />
                     </CInputGroup>
                   </CCol>
-                  </CRow>  
+                </CRow> 
+                <hr className="mb-0 me-0 text-gray-400" /> 
                 <CRow>
                   <CCol xs={12} sm={6} md={2} xl={2} className="mt-1">
                     <CFormLabel htmlFor="qty" style={{ fontSize: '13px' }}>
@@ -1315,24 +1232,18 @@ const header = () => (
                 </CRow>
                 {/* Collapse content */}
               </CCardBody>
+              )}
             </CForm>
           </CCard>
-        )}
+        
         <CCard className="mt-3">
-          <CCardHeader className="fw-bold fs-6 fst-italic" >Tabel Red Post</CCardHeader>
+          <CCardHeader className="fw-bold fs-6 fst-italic" >Table Red Post</CCardHeader>
           <CForm>
             <CCardBody>
               <CRow>
                 <CCol xs={12} sm={12} md={5} lg={6} xl={8}>
                   <div className="d-flex flex-wrap justify-content-start">
-                    <Button
-                      type="button"
-                      label={isFormVisible ? 'Hide ' : 'Show '}
-                      icon={isFormVisible ? 'pi pi-minus' : 'pi pi-plus'}
-                      severity="primary"
-                      className="rounded-3 me-2 mb-2"
-                      onClick={() => setIsFormVisible((prev) => !prev)}
-                    />
+                  
                     <Button
                       type="button"
                       label="Excel"
@@ -1359,7 +1270,7 @@ const header = () => (
                   <Calendar 
                     value={selectedDate} 
                     onChange={handleDateChangeTabel} 
-                    dateFormat="yy-mm-dd" 
+                    dateFormat="dd-mm-yyyy" 
                     placeholder="Filter by Date Range"
                     selectionMode="range"
                     readOnlyInput 
@@ -1401,10 +1312,17 @@ const header = () => (
                       scrollDirection="horizontal"
                     >
                     <Column className='' header="No" body={(rowBody, { rowIndex }) => rowIndex + 1}></Column>
-                      <Column field="InputDate" header="Date" 
+                    <Column 
+                      header="Date"
+                      frozen 
+                      alignFrozen="left"
                       sortable
-                      frozen alignFrozen="left"
-                      style={{ whiteSpace: 'nowrap', minWidth: '40px' }}  />
+                      style={{ whiteSpace: 'nowrap', minWidth: '100px' }}
+                      body={(rowData) => {
+                        const date = rowData.InputDate ? new Date(rowData.InputDate) : null;
+                        return date ? format(date, 'dd-MM-yyyy') : "-";
+                      }}
+                    />
                       <Column 
                       field="ShiftId" 
                       header="Shift" 
@@ -1435,6 +1353,11 @@ const header = () => (
                           field="CardNo" 
                           header="Card No" 
                           body={(rowData) => (
+                            <CTooltip
+                            content="Card No Details"
+                            placement="top"
+                           
+                            >
                             <span 
                               style={{ 
                                 cursor: "pointer" 
@@ -1443,6 +1366,7 @@ const header = () => (
                             >
                               {rowData.CardNo}
                             </span>
+                            </CTooltip>
                           )} 
                         />
                       <Column 
@@ -1464,99 +1388,55 @@ const header = () => (
                       )}
                     />
                  <Column 
-                  field="OrderDate" 
-                  header="Plan Delivery"
-                  body={(rowData) => (
-                    <div 
-                      style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        background: "white", 
-                        padding: "5px", 
-                        borderRadius: "4px",
-                        justifyContent: "space-between",
-                        width: "110px"
-                      }}
-                    >
-                     <input
-                      type="date"
-                      value={rowData.OrderDate || ""}
-                      onChange={(e) => handleDateOrder(e.target.value, rowData)}
-                      onFocus={() => setEditingDateId(rowData.id)} // Set editingDateId saat input diklik
-                      onBlur={() => setTimeout(() => setEditingDateId(null), 200)} // Hilangkan editingDateId setelah selesai edit
-                      placeholder="Silakan isi"
-                      style={{ flexGrow: 1, border: "none", outline: "none" }}
-                      disabled={!(roleName === "group head" || roleName === "super admin")} // Hanya bisa edit jika role sesuai
-                    />
-                      {editingDateId === rowData.id && (roleName === "group head" || roleName === "super admin") && (
-                        <button 
-                          onClick={() => handleSubmitDateOrder(rowData)}
-                          style={{ background: "none", border: "none", cursor: "pointer", marginLeft: "8px" }}
-                        >
-                          <FontAwesomeIcon icon={faCheck} style={{ color: "green" }} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                />
-                <Column 
-                  field="OrderPic" 
-                  header="PIC Order"
-                  body={(rowData) => (
-                    <div 
-                      style={{ 
-                        padding: "5px", 
-                        background: "#f9f9f9", 
-                        borderRadius: "4px",
-                        textAlign: "center"
-                      }}
-                    >
-                      {rowData.OrderPic || "-"} 
-                    </div>
-                  )}
-                />
-                   {visibleColumns.map((col, index) => (
+                    field="OrderDate" 
+                    header="Plan Delivery"
+                    body={(rowData) => {
+                      const orderDate = rowData.OrderDate ? new Date(rowData.OrderDate) : null;
+                      return orderDate ? format(orderDate, 'dd-MM-yyyy') : "-";
+                     }}
+                  />
+
+                  <Column 
+                    field="OrderPic" 
+                    header="PIC Order"
+                    body={(rowData) => (
+                      <div 
+                        style={{ 
+                          padding: "5px", 
+                          background: "#f9f9f9", 
+                          borderRadius: "4px",
+                          textAlign: "center"
+                        }}
+                      >
+                        {rowData.OrderPic || "-"}
+                      </div>
+                    )}
+                  />
+                    {visibleColumns.map((col, index) => (
                     <Column
                       key={index}
                       field={col.field}
                       header={col.header}
                       body={col.body}
                       sortable={col.sortable}
-                      // headerStyle={col.headerStyle}
-                      // bodyStyle={col.bodyStyle}
+                      headerStyle={col.headerStyle}
+                      bodyStyle={col.bodyStyle}
                     />
                   ))}
-                {/* <Column 
-                  field="Status" 
-                  frozen alignFrozen="right"
-                  header="Status"  
-                  body={(rowData) => (
-                    <div style={{ textAlign: 'center', fontWeight: 'bold', color: 'red' }}>
-                      {rowData.Soh > 0 ? (
-                        <FontAwesomeIcon 
-                          icon={faExclamationTriangle} 
-                          style={{ color: 'orange', fontSize: '1.2rem' }} 
-                          title="≠ IWMS" 
-                        />
-                      ) : (
-                        <FontAwesomeIcon 
-                          icon={faCircle} 
-                          style={{ color: 'green', fontSize: '1.2rem' }} 
-                          title="= IWMS" 
-                        />
-                      )}
-                    </div>
-                  )}
-                  sortable
-                /> */}
                  <Column 
-                    body={actionBodyTemplate} 
-                    header="Action" 
+                    body={actionEditTemplate} 
+                    header="Edit" 
                     frozen alignFrozen="right"
                     align="center" 
-                    style={{ minWidth: '60px' }} 
+                    style={{ minWidth: '40px' }} 
                   />
-                 
+                 <Column 
+                    body={actionDeleteTemplate} 
+                    header="Delete" 
+                    frozen alignFrozen="right"
+                    align="center" 
+                    style={{ minWidth: '40px' }} 
+                  />
                   </DataTable>
                 </div>
               </CRow>
@@ -1627,6 +1507,51 @@ const header = () => (
                     </CButton>
                   </CModalFooter>
                 </CModal>
+                {/* ///////// Modal untuk edit order////////////*/}
+                <CModal size="lg" visible={modalEditOrder} onClose={() => setModalEditOrder(false)}>
+                <CModalHeader>
+                  <CModalTitle>Order Input</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                  <CRow className="mt-1">
+                    <CCol xs={12} sm={12} md={6} xl={6}>
+                      <CFormLabel style={{ fontSize: '13px' }}>
+                        Date <span style={{ color: 'red' }}>*</span>
+                      </CFormLabel>
+                      <CFormInput
+                        type="date"
+                        value={editedDate}
+                        onChange={(e) => setEditedDate(e.target.value)}
+                        disabled={!(roleName === "group head" || roleName === "super admin")}
+                      />
+                    </CCol>
+
+                    <CCol xs={12} sm={12} md={6} xl={6}>
+                      <CFormLabel style={{ fontSize: '13px' }}>
+                        Order PIC <span style={{ color: 'red' }}>*</span>
+                      </CFormLabel>
+                      <CFormInput value={name} disabled />
+                    </CCol>
+                  </CRow>
+
+                  <CRow className="mt-3">
+                    <CCol xs={12}>
+                      <CFormLabel style={{ fontSize: '13px' }}>Remark</CFormLabel>
+                      <CFormInput
+                        type="text"
+                        value={editedRemark}
+                        onChange={(e) => setEditedRemark(e.target.value)}
+                      />
+                    </CCol>
+                  </CRow>
+                </CModalBody>
+
+                <CModalFooter>
+                  <CButton color="info" onClick={handleSubmitUpdateOrder}>
+                    Update
+                  </CButton>
+                </CModalFooter>
+              </CModal>
             </CCardBody>
           </CForm>
         </CCard>

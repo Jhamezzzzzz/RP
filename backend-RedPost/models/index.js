@@ -14,9 +14,9 @@ import DefisitCompare from "./CompareModel.js";
   try {
      //logMasterAssociations();
     //await db.sync();
-    //  await db.sync({ force: true });
-    //  await DefisitCompare.sync({ force: true });
-    // await InputRedPost.sync({ alter: true });
+    //  await .sync({ force: true });
+    //  await .sync({ force: true });
+    // await InputDefisit.sync({ alter: true });
     console.log("Database synced successfully.");
   } catch (error) {
     console.error("Unable to sync the database:", error);

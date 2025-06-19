@@ -80,10 +80,39 @@ const Login = () => {
   >
       <CContainer>
         <CRow className="justify-content-center">
-          <CCol md={6}>
+          <CCol md={6} sm={6} xs={12}>
             <CCardGroup>
-              <CCard className="p-4">
-                <CCardBody>
+               <CCard className="text-white shadow-lg" style={{backgroundColor:'rgba(255,255,255,0.5)', backdropFilter:'blur(1px)'}}>
+               <CCardBody>
+                 <CRow> 
+                    <label className="fw-bold display-6 justify-content-start align-items-start"
+                    style={{color:'black',opacity:'0.4'}} >
+                      Hello!
+                    </label>
+                  </CRow>
+                  <CRow>
+                    <label className="fw-bold display-6 justify-content-start align-items-start mb-5"
+                      style={{color:'black',opacity:'0.3'}}  >
+                      Welcome To
+                    </label>
+                  </CRow >
+                   <div className="text-center w-100">
+                  <img
+                    src={logo}
+                    alt="Logo"
+                    className="img-fluid"
+                    style={{
+                      width: window.innerWidth >= 1080 ? '210px'
+                            : window.innerWidth >= 800 ? '150px'
+                            : '190px',
+                      height: 'auto',
+                    }}
+                  />
+                  </div>
+                </CCardBody>
+              </CCard>
+              <CCard className="p-4 shadow-lg" style={{backgroundColor:'rgba(255,255,255,0.3)', backdropFilter:'blur(11px)'}} >
+                 <CCardBody>
                   <CForm onSubmit={Auth}>
                     <h1>Login</h1>
                     <p className="text-body-secondary">Sign In to your account</p>
@@ -111,24 +140,16 @@ const Login = () => {
                       />
                     </CInputGroup>
                     <CRow>
-                      <CCol xs={6}>
-                        <CButton color="primary" className="px-4" type="submit">
+                      <CCol md={6} xs={6} sm={6}>
+                        <CButton 
+                         type="submit"    
+                        className="login-button px-4">
                           Login
                         </CButton>
+
                       </CCol>
                     </CRow>
                   </CForm>
-                </CCardBody>
-              </CCard>
-              <CCard className="text-white bg-white py-5  px-1" style={{ width: '%' }}>
-                <CCardBody className="text-center">
-                  <img src={logo} alt="Logo" className="sidebar-brand-full" height={80} />
-
-                  <label style={{ color: 'black' }} className="fw-bold fs-5">
-                    Toyota Warehouse Integrated Inventory System
-                  </label>
-
-                 
                 </CCardBody>
               </CCard>
             </CCardGroup>
