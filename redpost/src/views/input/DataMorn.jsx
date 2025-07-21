@@ -141,13 +141,16 @@ const DataStock = () => {
     formData.append('importDate', uploadData.importDate) // Tambahkan tanggal impor
   
     try {
-      await uploadStockData(formData) // Panggil API untuk upload data
+      await uploadStockData(formData)
       MySwal.fire('Success', 'File uploaded successfully.', 'success')
       setModalUpload(false)
-      fetchStockData() // Refresh data setelah upload berhasil
+
+      // ✅ Gunakan parameter yang benar
+      await fetchStockData(currentPage, changeSearch)
     } catch (error) {
       console.error('Failed to upload file:', error)
-    } finally {
+    }
+    finally {
       setLoadingImport(false) // Hentikan animasi loading
     }
   }
@@ -172,17 +175,7 @@ const DataStock = () => {
     }))
   }
 
-  const onGlobalFilterChange = (e) => {
-    const value = e.target.value.toLowerCase();
-    setGlobalFilterValue(value);
 
-    // Filter data berdasarkan input pencarian
-    const filtered = stockData.filter((item) =>
-      item.materialNo.toLowerCase().includes(value) ||
-      item.description.toLowerCase().includes(value)
-    );
-    setFilteredData(filtered);
-  };
   
   const renderHeader = () => {
     return (

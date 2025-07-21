@@ -13,7 +13,7 @@ export const getStockData = async (req, res) => {
   try {
     // Dapatkan parameter page dari query, jika tidak ada default 1
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = 1000; // Default 15 data per halaman
+    const limit = 25; // Default 15 data per halaman
     const offset = (page - 1) * limit; // Hitung offset
     const search = req.query.search;
     
@@ -73,13 +73,13 @@ export const getSohByMaterialNo = async (req, res) => {
 };
 
 
-const validateHeader = (header) => {
-  // Validasi header sesuai dengan kolom yang diharapkan
-  const expectedHeader = ["Plant Cd", "Sloc Cd", "Material No", "Description", "Rack Cd", "SOH", "UoM"];
+// const validateHeader = (header) => {
+//   // Validasi header sesuai dengan kolom yang diharapkan
+//   const expectedHeader = ["Plant Cd", "Sloc Cd", "Material No", "Description", "Rack Cd", "SOH", "UoM"];
 
 
-  return expectedHeader.every((col, index) => header[index] === col);
-};
+//   return expectedHeader.every((col, index) => header[index] === col);
+// };
 
 export const uploadStockData = async (req, res) => {
   if (!req.file) {

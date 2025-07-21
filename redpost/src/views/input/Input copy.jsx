@@ -11,6 +11,7 @@ import { Column } from 'primereact/column';
 import { Tag } from 'primereact/tag';
 import Swal from 'sweetalert2';
 import '../../scss/_tabels.scss'
+import AsyncSelect from 'react-select/async';
 import {
   CCard,
   CCardHeader,
@@ -226,7 +227,8 @@ const displayDate = format(date, 'dd-MM-yyyy'); // untuk tampilkan ke user
       useEffect(() => {
         fetchData()
       }, [])
- 
+
+    
 
     const getInventories = async () => {
       try {
@@ -919,6 +921,9 @@ const handlePicChange = (selected) => {
   }
 };
 
+
+
+
 const onColumnToggle = (event) => {
   let selectedColumns = event.value
   let orderedSelectedColumns = columns.filter((col) =>
@@ -962,6 +967,15 @@ const handleSubmitUpdateOrder = async () => {
   }
 };
 
+const loadMaterialOptions = async (inputValue) => {
+  const res = await axios.get ;
+  return res.data.map(item => ({
+    value: item.id,
+    label: item.Material.materialNo
+  }));
+}
+
+
 
   return (
     <CRow>
@@ -996,13 +1010,8 @@ const handleSubmitUpdateOrder = async () => {
                         className="basic-single"
                         classNamePrefix="select"
                         isLoading={isLoading}
-                          isClearable={isClearable}
-                          options={(filteredInventory.length > 0 ? filteredInventory : inventory).map(
-                          (i) => ({
-                            value: i.id,
-                            label: i.Material.materialNo,
-                          }),
-                        )}
+                        isClearable={isClearable}
+                        loadOptions={loadMaterialOptions}
                         id="materialNo"
                         onChange={handleMaterialNoChange}
                         value={selectedMaterialNo}
